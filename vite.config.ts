@@ -15,7 +15,7 @@ export default defineConfig(({ command }) => ({
     // Copy index.html to 404.html for GitHub Pages SPA routing
     {
       name: 'copy-404',
-      closeBundle() {
+      writeBundle() {
         if (command === 'build') {
           copyFileSync('dist/index.html', 'dist/404.html')
         }
