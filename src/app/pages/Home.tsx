@@ -75,21 +75,23 @@ export function Home() {
         ) : (
           <>
             {(coverUrl || readme) && (
-              <div className="mb-12 bg-zinc-900 rounded-lg p-6">
-                <div className="flex gap-6">
+              <div className="mb-12 bg-zinc-900 rounded-lg overflow-hidden">
+                <div className="flex flex-col lg:flex-row gap-6 lg:gap-0">
                   {coverUrl && (
-                    <div className="flex-shrink-0">
+                    <div className="flex-shrink-0 w-full lg:w-96">
                       <img 
                         src={coverUrl} 
                         alt="Inside Out Cover" 
-                        className="w-96 h-96 object-cover rounded-lg shadow-lg"
+                        className="w-full h-96 object-cover"
                       />
                     </div>
                   )}
                   
                   {readme && (
-                    <div className="flex-1 prose prose-invert max-w-none">
-                      <Markdown skipHtml>{readme}</Markdown>
+                    <div className="flex-1 p-6">
+                      <div className="text-zinc-300 [&>p]:mb-4" style={{ columnCount: 2, columnGap: '2rem' }}>
+                        <Markdown skipHtml>{readme}</Markdown>
+                      </div>
                     </div>
                   )}
                 </div>

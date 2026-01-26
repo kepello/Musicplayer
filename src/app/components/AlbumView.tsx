@@ -87,7 +87,7 @@ export function AlbumView() {
               <div className="text-sm text-zinc-400 mb-2">{collectionName}</div>
               <h1 className="text-4xl font-bold mb-4">{albumName}</h1>
               {readme && (
-                <div className="prose prose-invert max-w-none md:columns-2 md:gap-6">
+                <div className="text-zinc-300 [&>p]:mb-4" style={{ columnCount: 2, columnGap: '2rem' }}>
                   <Markdown skipHtml>{readme}</Markdown>
                 </div>
               )}
