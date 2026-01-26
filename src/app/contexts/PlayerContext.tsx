@@ -131,18 +131,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       if (!playHistory.length || playHistory[playHistory.length - 1]?.path !== playlist[prevIndex].path) {
         setPlayHistory(prev => [...prev, playlist[prevIndex]]);
       }
-    }currentIndex + 1) % playlist.length;
-    setCurrentIndex(nextIndex);
-    setCurrentTrack(playlist[nextIndex]);
-    setIsPlaying(true);
-  };
-
-  const playPrevious = () => {
-    if (playlist.length === 0) return;
-    const prevIndex = currentIndex === 0 ? playlist.length - 1 : currentIndex - 1;
-    setCurrentIndex(prevIndex);
-    setCurrentTrack(playlist[prevIndex]);
-    setIsPlaying(true);
+    }
   };
 
   // Auto-play when track changes

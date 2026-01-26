@@ -121,7 +121,14 @@ export function TrackView() {
     if (mp3Url) {
       const a = document.createElement('a');
       a.href = mp3Url;
-      a.trackPath = albumName 
+      a.download = `${trackName}.mp3`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+  };
+
+  const trackPath = albumName 
     ? `${collectionName}/${albumName}/${trackName}`
     : `${collectionName}/${trackName}`;
   const isCurrentTrack = currentTrack?.path === trackPath;
@@ -129,21 +136,14 @@ export function TrackView() {
   const backLink = albumName 
     ? `/collection/${encodeURIComponent(collectionName!)}/album/${encodeURIComponent(albumName)}`
     : `/collection/${encodeURIComponent(collectionName!)}`;
-  const backText = albumName || collectionName
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-    }
-  };
-
-  const isCurrentTrack = currentTrack?.path === `${collectionName}/${trackName}`;
+  const backText = albumName || collectionName;
 
   if (loading) {
-    return (backLink}
-          className="inline-flex items-center gap-2 text-zinc-400 hover:text-white mb-6 transition-colors"
-        >
-          <ChevronLeft className="w-5 h-5" />
-          Back to {backTextzinc-400">Loading track...</div>
+    return (
+      <div className="min-h-screen bg-black text-white pb-32">
+        <div className="max-w-screen-xl mx-auto px-6 py-12">
+          <div className="flex items-center justify-center py-20">
+            <div className="text-zinc-400">Loading track...</div>
           </div>
         </div>
       </div>
@@ -154,11 +154,11 @@ export function TrackView() {
     <div className="min-h-screen bg-black text-white pb-32">
       <div className="max-w-screen-xl mx-auto px-6 py-12">
         <Link 
-          to={`/collection/${encodeURIComponent(collectionName!)}`}
+          to={backLink}
           className="inline-flex items-center gap-2 text-zinc-400 hover:text-white mb-6 transition-colors"
         >
           <ChevronLeft className="w-5 h-5" />
-          Back to {collectionName}
+          Back to {backText}
         </Link>
 
         <div className="mb-8">
