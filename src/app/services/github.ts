@@ -8,13 +8,13 @@ const BRANCH = 'main';
 // Generate one at: https://github.com/settings/tokens (no scopes needed for public repos)
 const GITHUB_TOKEN = ''; // Leave empty for unauthenticated requests (60/hour limit)
 
-// Cache for API responses with longer expiry for production
+// Cache for API responses - short duration to see repository changes quickly
 const cache = new Map<string, { data: any; timestamp: number }>();
-const CACHE_DURATION = 10 * 60 * 1000; // 10 minutes
+const CACHE_DURATION = 30 * 1000; // 30 seconds
 
-// Persistent cache in localStorage for cross-session caching
+// Persistent cache in localStorage disabled for better refresh experience
 const STORAGE_KEY_PREFIX = 'github_cache_';
-const STORAGE_DURATION = 60 * 60 * 1000; // 1 hour
+const STORAGE_DURATION = 0; // Disabled - just reload the page to see changes
 
 function getCached<T>(key: string): T | null {
   // Check in-memory cache first

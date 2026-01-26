@@ -61,19 +61,19 @@ export function Home() {
   return (
     <div className="min-h-screen bg-black text-white pb-32">
       <div className="max-w-screen-xl mx-auto px-6 py-12">
-        <h1 className="text-4xl font-bold mb-8">Inside Out</h1>
-        
-        {loading ? (
-          <div className="flex items-center justify-center py-20">
-            <div className="text-zinc-400">Loading...</div>
-          </div>
-        ) : error ? (
-          <div className="flex items-center justify-center py-20">
-            <AlertCircle className="mr-2" />
-            <div className="text-zinc-400">{error}</div>
-          </div>
-        ) : (
-          <>
+        <div className="flex items-center justify-between mb-8">
+          <h1 className="text-4xl font-bold">Inside Out</h1>
+          <Button 
+            onClick={handleRefresh}
+            disabled={loading || refreshing}
+            variant="outline"
+            size="sm"
+            className="gap-2"
+          >
+            <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+        <h1 className="text-4xl font-bold mb-8">Inside Out</h1
             {(coverUrl || readme) && (
               <div className="mb-12 bg-zinc-900 rounded-lg p-6">
                 <div className="flex gap-6">
