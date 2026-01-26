@@ -40,7 +40,11 @@ export function Home() {
             /\.(jpg|jpeg|png|gif|webp)$/i.test(item.name)
         );
         if (coverFile) {
-          setCoverUrl(getRawFileUrl(coverFile.path));
+          const url = getRawFileUrl(coverFile.path);
+          console.log('Cover found:', coverFile.name, 'URL:', url);
+          setCoverUrl(url);
+        } else {
+          console.log('No cover image found. Available files:', contents.map(c => c.name));
         }
         
         setLoading(false);
@@ -57,6 +61,8 @@ export function Home() {
   return (
     <div className="min-h-screen bg-black text-white pb-32">
       <div className="max-w-screen-xl mx-auto px-6 py-12">
+        <h1 className="text-4xl font-bold mb-8">Inside Out</h1>
+        
         {loading ? (
           <div className="flex items-center justify-center py-20">
             <div className="text-zinc-400">Loading...</div>
@@ -68,6 +74,16 @@ export function Home() {
           </div>
         ) : (
           <>
+            {coverUrl && (
+              <div className="mb-8">
+                <img 
+                  src={coverUrl} 
+                  alt="Inside Out Cover" 
+                  className="w-full max-w-2xl mx-auto rounded-lg shadow-lg"
+                />
+              </div>
+            )}
+            
             <div className="mb-8">
               {readme ? (
                 <div className="bg-zinc-900 rounded-lg p-6">
@@ -78,7 +94,6 @@ export function Home() {
               ) : null}
             </div>
             
-            <h2 className="text-2xl font-bold mb-6">Collections</h2>
             <CollectionsList />
           </>
         )}

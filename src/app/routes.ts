@@ -32,5 +32,5 @@ export const router = createBrowserRouter([
     Component: NotFound,
   },
 ], {
-  basename: import.meta.env.BASE_URL,
+  basename: import.meta.env.BASE_URL.replace(/\/$/, ''), // Remove trailing slash
 });

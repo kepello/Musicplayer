@@ -153,5 +153,7 @@ export async function getFileContent(path: string): Promise<string> {
 }
 
 export function getRawFileUrl(path: string): string {
-  return `https://raw.githubusercontent.com/${OWNER}/${REPO}/${BRANCH}/${path}`;
+  // Add timestamp as cache buster to force fresh image loads
+  const timestamp = Date.now();
+  return `https://raw.githubusercontent.com/${OWNER}/${REPO}/${BRANCH}/${path}?t=${timestamp}`;
 }

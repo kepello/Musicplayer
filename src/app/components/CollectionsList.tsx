@@ -11,8 +11,8 @@ export function CollectionsList() {
     async function loadCollections() {
       setLoading(true);
       const contents = await getRepoContents('');
-      // Filter only directories
-      const dirs = contents.filter(item => item.type === 'dir');
+      // Filter only directories and reverse the order
+      const dirs = contents.filter(item => item.type === 'dir').reverse();
       setCollections(dirs);
       setLoading(false);
     }
@@ -38,7 +38,7 @@ export function CollectionsList() {
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
       {collections.map((collection) => (
         <Link
           key={collection.sha}
