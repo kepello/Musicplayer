@@ -8,55 +8,21 @@ const BRANCH = 'main';
 // Generate one at: https://github.com/settings/tokens (no scopes needed for public repos)
 const GITHUB_TOKEN = ''; // Leave empty for unauthenticated requests (60/hour limit)
 
-// Cache for API responses - short duration to see repository changes quickly
+// Cache disabled for immediate repository updates
 const cache = new Map<string, { data: any; timestamp: number }>();
-const CACHE_DURATION = 30 * 1000; // 30 seconds
+const CACHE_DURATION = 0; // Disabled - always fetch fresh data
 
-// Persistent cache in localStorage disabled for better refresh experience
+// Persistent cache in localStorage disabled
 const STORAGE_KEY_PREFIX = 'github_cache_';
-const STORAGE_DURATION = 0; // Disabled - just reload the page to see changes
+const STORAGE_DURATION = 0; // Disabled
 
 function getCached<T>(key: string): T | null {
-  // Check in-memory cache first
-  const cached = cache.get(key);
-  if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
-    return cached.data as T;
-  }
-  cache.delete(key);
-  
-  // Check localStorage cache
-  try {
-    const storageKey = STORAGE_KEY_PREFIX + key;
-    const stored = localStorage.getItem(storageKey);
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      if (Date.now() - parsed.timestamp < STORAGE_DURATION) {
-        // Restore to memory cache
-        cache.set(key, parsed);
-        return parsed.data as T;
-      }
-      localStorage.removeItem(storageKey);
-    }
-  } catch (e) {
-    // localStorage might not be available
-  }
-  
+  // Cache disabled - always return null to fetch fresh data
   return null;
 }
 
 function setCache(key: string, data: any): void {
-  const cacheData = { data, timestamp: Date.now() };
-  
-  // Set in-memory cache
-  cache.set(key, cacheData);
-  
-  // Set localStorage cache
-  try {
-    const storageKey = STORAGE_KEY_PREFIX + key;
-    localStorage.setItem(storageKey, JSON.stringify(cacheData));
-  } catch (e) {
-    // localStorage might be full or unavailable
-  }
+  // Cache disabled - don't store anything
 }
 
 export interface GitHubContent {
