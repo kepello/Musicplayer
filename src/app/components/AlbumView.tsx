@@ -73,9 +73,9 @@ export function AlbumView() {
         </Link>
 
         <div className="mb-8">
-          <div className="bg-zinc-900 rounded-lg overflow-hidden flex">
+          <div className="bg-zinc-900 rounded-lg overflow-hidden flex flex-col lg:flex-row">
             {coverUrl && (
-              <div className="w-96 h-96 flex-shrink-0 bg-zinc-800">
+              <div className="w-full lg:w-96 h-96 flex-shrink-0 bg-zinc-800">
                 <img
                   src={coverUrl}
                   alt={`${albumName} cover`}
@@ -87,7 +87,7 @@ export function AlbumView() {
               <div className="text-sm text-zinc-400 mb-2">{collectionName}</div>
               <h1 className="text-4xl font-bold mb-4">{albumName}</h1>
               {readme && (
-                <div className="prose prose-invert max-w-none">
+                <div className="prose prose-invert max-w-none md:columns-2 md:gap-6">
                   <Markdown skipHtml>{readme}</Markdown>
                 </div>
               )}
