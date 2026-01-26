@@ -47,9 +47,17 @@ pnpm build
 
 This app is automatically deployed to GitHub Pages when changes are pushed to the `main` branch.
 
+### Live Site
+
+🎵 **[View the Music Player](https://kepello.github.io/Musicplayer/)**
+
+### Repository
+
+📦 **[GitHub Repository](https://github.com/kepello/Musicplayer)**
+
 ### Setup Instructions
 
-1. **Create a new repository** (e.g., `kepello/music-player`)
+1. **Create a new repository** (e.g., `kepello/Musicplayer`)
 
 2. **Push this code to the repository**:
    ```bash
@@ -57,7 +65,7 @@ This app is automatically deployed to GitHub Pages when changes are pushed to th
    git add .
    git commit -m "Initial commit"
    git branch -M main
-   git remote add origin https://github.com/kepello/music-player.git
+   git remote add origin https://github.com/kepello/Musicplayer.git
    git push -u origin main
    ```
 
@@ -68,8 +76,8 @@ This app is automatically deployed to GitHub Pages when changes are pushed to th
    - The workflow will automatically deploy your site
 
 4. **Access your site**:
-   - Your site will be available at: `https://kepello.github.io/music-player/`
-   - If using a custom domain or different repo name, update the `base` in `vite.config.ts`
+   - Your site will be available at: `https://kepello.github.io/Musicplayer/`
+   - If using a different repo name, update the `base` in `vite.config.ts`
 
 ## GitHub API Rate Limits
 
