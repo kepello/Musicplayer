@@ -69,30 +69,7 @@ export function Home() {
         ) : (
           <>
             <div className="mb-8">
-              {coverUrl && readme ? (
-                <div className="bg-zinc-900 rounded-lg overflow-hidden flex">
-                  <div className="w-96 h-96 flex-shrink-0 bg-zinc-800">
-                    <img
-                      src={coverUrl}
-                      alt="Music collection cover"
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <div className="flex-1 h-96 p-6 overflow-y-auto">
-                    <div className="prose prose-invert max-w-none">
-                      <Markdown skipHtml>{readme}</Markdown>
-                    </div>
-                  </div>
-                </div>
-              ) : coverUrl ? (
-                <div className="w-96 h-96 rounded-lg overflow-hidden">
-                  <img
-                    src={coverUrl}
-                    alt="Music collection cover"
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              ) : readme ? (
+              {readme ? (
                 <div className="bg-zinc-900 rounded-lg p-6">
                   <div className="prose prose-invert max-w-none">
                     <Markdown skipHtml>{readme}</Markdown>
