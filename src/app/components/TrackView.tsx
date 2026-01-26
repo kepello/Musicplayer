@@ -1,14 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router';
-import { getRepoContents, getFileContent, getRawFileUrl } from '@/app/services/github';
-import { usePlayer } from '@/app/contexts/PlayerContext';
+import { getRepoContents, getFileContent, getRawFileUrl, GitHubContent } from '@/app/services/github';
+import { usePlayer, Track } from '@/app/contexts/PlayerContext';
 import { ChevronLeft, Play, Download, Music } from 'lucide-react';
 import Markdown from 'react-markdown';
 import { stripHtmlFromMarkdown } from '@/app/utils/markdown';
 
 export function TrackView() {
-  const { collectionName, trackName } = useParams<{ 
-    collectionName: string; 
+  const { collectionName, albumName, trackName } = useParams<{ 
+    collectionName: string;
+    albumName?: string;
     trackName: string;
   }>();
   const { playTrack, currentTrack, isPlaying } = usePlayer();
@@ -16,14 +17,24 @@ export function TrackView() {
   const [mp3Url, setMp3Url] = useState<string>('');
   const [lyrics, setLyrics] = useState<string>('');
   const [loading, setLoading] = useState(true);
+  const [allTracks, setAllTracks] = useState<Track[]>([]);
 
   useEffect(() => {
     async function loadTrack() {
       if (!collectionName || !trackName) return;
       
       setLoading(true);
-      const path = `${collectionName}/${trackName}`;
-      const contents = await getRepoContents(path);
+      
+      // Determine the path based on whether we have an album
+      const trackPath = albumName 
+        ? `${collectionName}/${albumName}/${trackName}`
+        : `${collectionName}/${trackName}`;
+      const parentPath = albumName 
+        ? `${collectionName}/${albumName}`
+        : collectionName;
+      
+      // Load current track
+      const contents = await getRepoContents(trackPath);
       
       // Find README
       const readmeFile = contents.find(
@@ -51,22 +62,58 @@ export function TrackView() {
         setLyrics(content);
       }
       
+      // Load all tracks from parent (collection or album)
+      const parentContents = await getRepoContents(parentPath);
+      const trackFolders = parentContents.filter(item => item.type === 'dir');
+      
+      // Load mp3 URLs for all tracks
+      const tracksWithUrls = await Promise.all(
+        trackFolders.map(async (folder) => {
+          const folderPath = `${parentPath}/${folder.name}`;
+          const folderContents = await getRepoContents(folderPath);
+          const mp3 = folderContents.find(
+            item => item.type === 'file' && item.name.toLowerCase().endsWith('.mp3')
+          );
+          
+          if (mp3) {
+            return {
+              path: folderPath,
+              name: folder.name,
+              url: getRawFileUrl(mp3.path),
+              album: albumName || collectionName,
+              collection: collectionName,
+            } as Track;
+          }
+          return null;
+        })
+      );
+      
+      const validTracks = tracksWithUrls.filter((t): t is Track => t !== null);
+      setAllTracks(validTracks);
+      
       setLoading(false);
     }
     
     loadTrack();
-  }, [collectionName, trackName]);
+  }, [collectionName, albumName, trackName]);
 
   const handlePlay = () => {
     if (mp3Url) {
-      playTrack({
-        path: `${collectionName}/${trackName}`,
-        name: trackName!,
-        url: mp3Url,
-        album: collectionName,
-        collection: collectionName,
-        lyrics: lyrics,
-      });
+      const trackPath = albumName 
+        ? `${collectionName}/${albumName}/${trackName}`
+        : `${collectionName}/${trackName}`;
+      
+      playTrack(
+        {
+          path: trackPath,
+          name: trackName!,
+          url: mp3Url,
+          album: albumName || collectionName,
+          collection: collectionName,
+          lyrics: lyrics,
+        },
+        allTracks // Pass all tracks as playlist context
+      );
     }
   };
 
@@ -74,7 +121,15 @@ export function TrackView() {
     if (mp3Url) {
       const a = document.createElement('a');
       a.href = mp3Url;
-      a.download = `${trackName}.mp3`;
+      a.trackPath = albumName 
+    ? `${collectionName}/${albumName}/${trackName}`
+    : `${collectionName}/${trackName}`;
+  const isCurrentTrack = currentTrack?.path === trackPath;
+  
+  const backLink = albumName 
+    ? `/collection/${encodeURIComponent(collectionName!)}/album/${encodeURIComponent(albumName)}`
+    : `/collection/${encodeURIComponent(collectionName!)}`;
+  const backText = albumName || collectionName
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -84,11 +139,11 @@ export function TrackView() {
   const isCurrentTrack = currentTrack?.path === `${collectionName}/${trackName}`;
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-black text-white pb-32">
-        <div className="max-w-screen-xl mx-auto px-6 py-12">
-          <div className="flex items-center justify-center py-20">
-            <div className="text-zinc-400">Loading track...</div>
+    return (backLink}
+          className="inline-flex items-center gap-2 text-zinc-400 hover:text-white mb-6 transition-colors"
+        >
+          <ChevronLeft className="w-5 h-5" />
+          Back to {backTextzinc-400">Loading track...</div>
           </div>
         </div>
       </div>
