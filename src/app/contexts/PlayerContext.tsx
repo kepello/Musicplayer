@@ -44,10 +44,23 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     setIsPlaying(true);
     
     // Add to history if it's a different track
+    if (!playHistory.length || playHistory[playHistory.length - 1]?.path !== track.path) {
+      setPlayHistory(prev => [...prev, track]);
+    }
+  };
+
+  const playPlaylist = (tracks: Track[], startIndex: number = 0) => {
+    if (tracks.length === 0) return;
+    
+    const index = Math.min(startIndex, tracks.length - 1);
+    setPlaylist(tracks);
+    setCurrentIndex(index);
+    setCurrentTrack(tracks[index]);
+    setIsPlaying(true);
     
     // Add to history
-    if (!playHistory.length || playHistory[playHistory.length - 1]?.path !== tracks[startIndex].path) {
-      setPlayHistory(prev => [...prev, tracks[startIndex]]);
+    if (!playHistory.length || playHistory[playHistory.length - 1]?.path !== tracks[index].path) {
+      setPlayHistory(prev => [...prev, tracks[index]]);
     }
   };
 
