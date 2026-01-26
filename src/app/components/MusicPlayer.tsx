@@ -54,30 +54,43 @@ export function MusicPlayer() {
   if (!currentTrack) return null;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-zinc-900 border-t border-zinc-800 p-4 z-50">
-      <div className="max-w-screen-xl mx-auto">
-        {/* Track info */}
-        <div className="flex items-center gap-4 mb-3">
-          <div className="flex-1 min-w-0">
-            <div className="font-medium truncate text-white">{currentTrack.name}</div>
-            <div className="text-sm text-zinc-400 truncate">
-              {currentTrack.collection && currentTrack.album 
-                ? `${currentTrack.collection} / ${currentTrack.album}`
-                : currentTrack.album || currentTrack.collection || ''}
-            </div>
-          </div>
+    <div className="fixed bottom-0 left-0 right-0 bg-zinc-900 border-t border-zinc-800 p-3 z-50">
+      <div className="max-w-screen-xl mx-auto flex items-center gap-4">
+        {/* Controls - moved to left */}
+        <div className="flex items-center gap-2">
           <button
-            onClick={handleDownload}
-            className="p-2 hover:bg-zinc-800 rounded-full transition-colors text-zinc-300 hover:text-white"
-            title="Download track"
+            onClick={playPrevious}
+            className="p-1.5 hover:bg-zinc-800 rounded-full transition-colors text-zinc-300 hover:text-white"
           >
-            <Download className="w-5 h-5" />
+            <SkipBack className="w-4 h-4" />
+          </button>
+          <button
+            onClick={togglePlayPause}
+            className="p-2 bg-white text-black rounded-full hover:scale-105 transition-transform"
+          >
+            {isPlaying ? <Pause className="w-5 h-5" fill="currentColor" /> : <Play className="w-5 h-5" fill="currentColor" />}
+          </button>
+          <button
+            onClick={playNext}
+            className="p-1.5 hover:bg-zinc-800 rounded-full transition-colors text-zinc-300 hover:text-white"
+          >
+            <SkipForward className="w-4 h-4" />
           </button>
         </div>
 
+        {/* Track info */}
+        <div className="flex-1 min-w-0">
+          <div className="font-medium truncate text-white text-sm">{currentTrack.name}</div>
+          <div className="text-xs text-zinc-400 truncate">
+            {currentTrack.collection && currentTrack.album 
+              ? `${currentTrack.collection} / ${currentTrack.album}`
+              : currentTrack.album || currentTrack.collection || ''}
+          </div>
+        </div>
+
         {/* Progress bar */}
-        <div className="flex items-center gap-2 mb-3">
-          <span className="text-xs text-zinc-400 w-12 text-right">{formatTime(currentTime)}</span>
+        <div className="flex items-center gap-2 flex-1 max-w-md">
+          <span className="text-xs text-zinc-400 w-10 text-right">{formatTime(currentTime)}</span>
           <input
             type="range"
             min="0"
@@ -86,30 +99,17 @@ export function MusicPlayer() {
             onChange={handleSeek}
             className="flex-1 h-1 bg-zinc-700 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white"
           />
-          <span className="text-xs text-zinc-400 w-12">{formatTime(duration)}</span>
+          <span className="text-xs text-zinc-400 w-10">{formatTime(duration)}</span>
         </div>
 
-        {/* Controls */}
-        <div className="flex items-center justify-center gap-4">
-          <button
-            onClick={playPrevious}
-            className="p-2 hover:bg-zinc-800 rounded-full transition-colors text-zinc-300 hover:text-white"
-          >
-            <SkipBack className="w-5 h-5" />
-          </button>
-          <button
-            onClick={togglePlayPause}
-            className="p-3 bg-white text-black rounded-full hover:scale-105 transition-transform"
-          >
-            {isPlaying ? <Pause className="w-6 h-6" fill="currentColor" /> : <Play className="w-6 h-6" fill="currentColor" />}
-          </button>
-          <button
-            onClick={playNext}
-            className="p-2 hover:bg-zinc-800 rounded-full transition-colors text-zinc-300 hover:text-white"
-          >
-            <SkipForward className="w-5 h-5" />
-          </button>
-        </div>
+        {/* Download button */}
+        <button
+          onClick={handleDownload}
+          className="p-1.5 hover:bg-zinc-800 rounded-full transition-colors text-zinc-300 hover:text-white"
+          title="Download track"
+        >
+          <Download className="w-4 h-4" />
+        </button>
       </div>
     </div>
   );

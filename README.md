@@ -69,15 +69,104 @@ This app is automatically deployed to GitHub Pages when changes are pushed to th
    git push -u origin main
    ```
 
-3. **Enable GitHub Pages**:
+3. **⚠️ CRITICAL: Setup GitHub Actions workflow**
+   
+   Figma Make cannot create folders with leading dots (like `.github`), so the workflow file is located at `/workflows/deploy.yml`. You must manually move it:
+   
+   ```bash
+   # In your local repository
+   mkdir -p .github/workflows
+   mv workflows/deploy.yml .github/workflows/deploy.yml
+   git add .github/workflows/deploy.yml
+   git rm workflows/deploy.yml
+   git commit -m "Move workflow to correct location"
+   git push
+   ```
+   
+   **Important**: If you use Figma Make's GitHub push feature to update your app, it will remove the `.github` folder. After each push from Figma Make, you must restore it:
+   
+   ```bash
+   git pull  # Get the updates from Figma Make
+   # The .github folder should still be there if you committed it before
+   # If it's missing, recreate it:
+   mkdir -p .github/workflows
+   # Copy the workflow content from /workflows/deploy.yml if it exists, or use the content below
+   git add .github/workflows/deploy.yml
+   git commit -m "Restore GitHub Actions workflow"
+   git push
+   ```
+
+4. **Enable GitHub Pages**:
    - Go to your repository settings
    - Navigate to "Pages" section
    - Under "Source", select "GitHub Actions"
    - The workflow will automatically deploy your site
 
-4. **Access your site**:
+5. **Access your site**:
    - Your site will be available at: `https://kepello.github.io/Musicplayer/`
    - If using a different repo name, update the `base` in `vite.config.ts`
+
+### GitHub Actions Workflow File
+
+If you need to recreate `.github/workflows/deploy.yml`, use this content:
+
+```yaml
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 8
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build
+        run: pnpm build
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./dist
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+```
 
 ## GitHub API Rate Limits
 

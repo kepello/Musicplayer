@@ -107,14 +107,15 @@ export function TrackView() {
         </Link>
 
         <div className="mb-8">
-          <div className="text-sm text-zinc-400 mb-2">{collectionName}</div>
-          <h1 className="text-4xl font-bold mb-6">{trackName}</h1>
-          
-          {readme && (
-            <div className="prose prose-invert max-w-none mb-6">
-              <Markdown skipHtml>{readme}</Markdown>
-            </div>
-          )}
+          <div className="bg-zinc-900 rounded-lg p-6 mb-6">
+            <h1 className="text-4xl font-bold mb-4">{trackName}</h1>
+            
+            {readme && (
+              <div className="prose prose-invert max-w-none">
+                <Markdown skipHtml>{readme}</Markdown>
+              </div>
+            )}
+          </div>
           
           {mp3Url && (
             <div className="flex gap-3 mb-8">
