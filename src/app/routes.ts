@@ -1,7 +1,6 @@
 import { createBrowserRouter } from 'react-router';
 import { Home } from '@/app/pages/Home';
 import { Collection } from '@/app/pages/Collection';
-import { Album } from '@/app/pages/Album';
 import { Track } from '@/app/pages/Track';
 import { NotFound } from '@/app/pages/NotFound';
 import { ErrorBoundary } from '@/app/pages/ErrorBoundary';
@@ -18,12 +17,7 @@ export const router = createBrowserRouter([
     ErrorBoundary: ErrorBoundary,
   },
   {
-    path: '/collection/:collectionName/album/:albumName',
-    Component: Album,
-    ErrorBoundary: ErrorBoundary,
-  },
-  {
-    path: '/collection/:collectionName/album/:albumName/track/:trackName',
+    path: '/collection/:collectionName/track/:trackName',
     Component: Track,
     ErrorBoundary: ErrorBoundary,
   },

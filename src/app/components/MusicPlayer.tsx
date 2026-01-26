@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { usePlayer } from '@/app/contexts/PlayerContext';
-import { Play, Pause, SkipBack, SkipForward, Volume2, Download } from 'lucide-react';
+import { Play, Pause, SkipBack, SkipForward, Download } from 'lucide-react';
 
 export function MusicPlayer() {
   const { currentTrack, isPlaying, togglePlayPause, playNext, playPrevious, audioRef } = usePlayer();
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [volume, setVolume] = useState(1);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -41,14 +40,6 @@ export function MusicPlayer() {
     }
   };
 
-  const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newVolume = parseFloat(e.target.value);
-    setVolume(newVolume);
-    if (audioRef.current) {
-      audioRef.current.volume = newVolume;
-    }
-  };
-
   const handleDownload = () => {
     if (currentTrack) {
       const a = document.createElement('a');
@@ -68,7 +59,7 @@ export function MusicPlayer() {
         {/* Track info */}
         <div className="flex items-center gap-4 mb-3">
           <div className="flex-1 min-w-0">
-            <div className="font-medium truncate">{currentTrack.name}</div>
+            <div className="font-medium truncate text-white">{currentTrack.name}</div>
             <div className="text-sm text-zinc-400 truncate">
               {currentTrack.collection && currentTrack.album 
                 ? `${currentTrack.collection} / ${currentTrack.album}`
@@ -77,7 +68,7 @@ export function MusicPlayer() {
           </div>
           <button
             onClick={handleDownload}
-            className="p-2 hover:bg-zinc-800 rounded-full transition-colors"
+            className="p-2 hover:bg-zinc-800 rounded-full transition-colors text-zinc-300 hover:text-white"
             title="Download track"
           >
             <Download className="w-5 h-5" />
@@ -99,42 +90,25 @@ export function MusicPlayer() {
         </div>
 
         {/* Controls */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 w-32">
-            <Volume2 className="w-4 h-4 text-zinc-400" />
-            <input
-              type="range"
-              min="0"
-              max="1"
-              step="0.01"
-              value={volume}
-              onChange={handleVolumeChange}
-              className="flex-1 h-1 bg-zinc-700 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-2.5 [&::-webkit-slider-thumb]:h-2.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white"
-            />
-          </div>
-
-          <div className="flex items-center gap-4">
-            <button
-              onClick={playPrevious}
-              className="p-2 hover:bg-zinc-800 rounded-full transition-colors"
-            >
-              <SkipBack className="w-5 h-5" />
-            </button>
-            <button
-              onClick={togglePlayPause}
-              className="p-3 bg-white text-black rounded-full hover:scale-105 transition-transform"
-            >
-              {isPlaying ? <Pause className="w-6 h-6" fill="currentColor" /> : <Play className="w-6 h-6" fill="currentColor" />}
-            </button>
-            <button
-              onClick={playNext}
-              className="p-2 hover:bg-zinc-800 rounded-full transition-colors"
-            >
-              <SkipForward className="w-5 h-5" />
-            </button>
-          </div>
-
-          <div className="w-32"></div>
+        <div className="flex items-center justify-center gap-4">
+          <button
+            onClick={playPrevious}
+            className="p-2 hover:bg-zinc-800 rounded-full transition-colors text-zinc-300 hover:text-white"
+          >
+            <SkipBack className="w-5 h-5" />
+          </button>
+          <button
+            onClick={togglePlayPause}
+            className="p-3 bg-white text-black rounded-full hover:scale-105 transition-transform"
+          >
+            {isPlaying ? <Pause className="w-6 h-6" fill="currentColor" /> : <Play className="w-6 h-6" fill="currentColor" />}
+          </button>
+          <button
+            onClick={playNext}
+            className="p-2 hover:bg-zinc-800 rounded-full transition-colors text-zinc-300 hover:text-white"
+          >
+            <SkipForward className="w-5 h-5" />
+          </button>
         </div>
       </div>
     </div>

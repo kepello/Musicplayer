@@ -7,9 +7,8 @@ import Markdown from 'react-markdown';
 import { stripHtmlFromMarkdown } from '@/app/utils/markdown';
 
 export function TrackView() {
-  const { collectionName, albumName, trackName } = useParams<{ 
+  const { collectionName, trackName } = useParams<{ 
     collectionName: string; 
-    albumName: string; 
     trackName: string;
   }>();
   const { playTrack, currentTrack, isPlaying } = usePlayer();
@@ -20,10 +19,10 @@ export function TrackView() {
 
   useEffect(() => {
     async function loadTrack() {
-      if (!collectionName || !albumName || !trackName) return;
+      if (!collectionName || !trackName) return;
       
       setLoading(true);
-      const path = `${collectionName}/${albumName}/${trackName}`;
+      const path = `${collectionName}/${trackName}`;
       const contents = await getRepoContents(path);
       
       // Find README
@@ -56,15 +55,15 @@ export function TrackView() {
     }
     
     loadTrack();
-  }, [collectionName, albumName, trackName]);
+  }, [collectionName, trackName]);
 
   const handlePlay = () => {
     if (mp3Url) {
       playTrack({
-        path: `${collectionName}/${albumName}/${trackName}`,
+        path: `${collectionName}/${trackName}`,
         name: trackName!,
         url: mp3Url,
-        album: albumName,
+        album: collectionName,
         collection: collectionName,
         lyrics: lyrics,
       });
@@ -82,7 +81,7 @@ export function TrackView() {
     }
   };
 
-  const isCurrentTrack = currentTrack?.path === `${collectionName}/${albumName}/${trackName}`;
+  const isCurrentTrack = currentTrack?.path === `${collectionName}/${trackName}`;
 
   if (loading) {
     return (
@@ -100,46 +99,41 @@ export function TrackView() {
     <div className="min-h-screen bg-black text-white pb-32">
       <div className="max-w-screen-xl mx-auto px-6 py-12">
         <Link 
-          to={`/collection/${encodeURIComponent(collectionName!)}/album/${encodeURIComponent(albumName!)}`}
+          to={`/collection/${encodeURIComponent(collectionName!)}`}
           className="inline-flex items-center gap-2 text-zinc-400 hover:text-white mb-6 transition-colors"
         >
           <ChevronLeft className="w-5 h-5" />
-          Back to {albumName}
+          Back to {collectionName}
         </Link>
 
         <div className="mb-8">
-          <div className="flex gap-6 mb-6">
-            <div className="w-64 h-64 flex-shrink-0 bg-zinc-800 rounded-lg flex items-center justify-center">
-              <Music className="w-32 h-32 text-zinc-600" />
+          <div className="text-sm text-zinc-400 mb-2">{collectionName}</div>
+          <h1 className="text-4xl font-bold mb-6">{trackName}</h1>
+          
+          {readme && (
+            <div className="prose prose-invert max-w-none mb-6">
+              <Markdown skipHtml>{readme}</Markdown>
             </div>
-            <div className="flex-1">
-              <div className="text-sm text-zinc-400 mb-1">{collectionName} / {albumName}</div>
-              <h1 className="text-4xl font-bold mb-4">{trackName}</h1>
-              {readme && (
-                <div className="prose prose-invert max-w-none mb-4">
-                  <Markdown skipHtml>{readme}</Markdown>
-                </div>
-              )}
-              {mp3Url && (
-                <div className="flex gap-3">
-                  <button
-                    onClick={handlePlay}
-                    className="px-6 py-2 bg-white text-black rounded-full font-medium hover:scale-105 transition-transform flex items-center gap-2"
-                  >
-                    <Play className="w-4 h-4" fill="currentColor" />
-                    {isCurrentTrack && isPlaying ? 'Playing' : 'Play'}
-                  </button>
-                  <button
-                    onClick={handleDownload}
-                    className="px-6 py-2 bg-zinc-800 rounded-full font-medium hover:bg-zinc-700 transition-colors flex items-center gap-2"
-                  >
-                    <Download className="w-4 h-4" />
-                    Download
-                  </button>
-                </div>
-              )}
+          )}
+          
+          {mp3Url && (
+            <div className="flex gap-3 mb-8">
+              <button
+                onClick={handlePlay}
+                className="px-6 py-2 bg-white text-black rounded-full font-medium hover:scale-105 transition-transform flex items-center gap-2"
+              >
+                <Play className="w-4 h-4" fill="currentColor" />
+                {isCurrentTrack && isPlaying ? 'Playing' : 'Play'}
+              </button>
+              <button
+                onClick={handleDownload}
+                className="px-6 py-2 bg-zinc-800 rounded-full font-medium hover:bg-zinc-700 transition-colors flex items-center gap-2"
+              >
+                <Download className="w-4 h-4" />
+                Download
+              </button>
             </div>
-          </div>
+          )}
         </div>
 
         {lyrics && (

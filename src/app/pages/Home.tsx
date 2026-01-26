@@ -74,25 +74,27 @@ export function Home() {
           </div>
         ) : (
           <>
-            {coverUrl && (
-              <div className="mb-8">
-                <img 
-                  src={coverUrl} 
-                  alt="Inside Out Cover" 
-                  className="w-full max-w-2xl mx-auto rounded-lg shadow-lg"
-                />
+            {(coverUrl || readme) && (
+              <div className="mb-12 bg-zinc-900 rounded-lg p-6">
+                <div className="flex gap-6">
+                  {coverUrl && (
+                    <div className="flex-shrink-0">
+                      <img 
+                        src={coverUrl} 
+                        alt="Inside Out Cover" 
+                        className="w-96 h-96 object-cover rounded-lg shadow-lg"
+                      />
+                    </div>
+                  )}
+                  
+                  {readme && (
+                    <div className="flex-1 prose prose-invert max-w-none">
+                      <Markdown skipHtml>{readme}</Markdown>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
-            
-            <div className="mb-8">
-              {readme ? (
-                <div className="bg-zinc-900 rounded-lg p-6">
-                  <div className="prose prose-invert max-w-none">
-                    <Markdown skipHtml>{readme}</Markdown>
-                  </div>
-                </div>
-              ) : null}
-            </div>
             
             <CollectionsList />
           </>

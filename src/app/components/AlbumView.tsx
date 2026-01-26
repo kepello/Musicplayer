@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router';
 import { getRepoContents, getFileContent, getRawFileUrl, GitHubContent } from '@/app/services/github';
-import { ChevronLeft, Music, Folder } from 'lucide-react';
+import { ChevronLeft, Music, Play } from 'lucide-react';
 import Markdown from 'react-markdown';
 import { stripHtmlFromMarkdown } from '@/app/utils/markdown';
 
@@ -101,22 +101,21 @@ export function AlbumView() {
             <div className="text-zinc-400">No tracks found</div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {tracks.map((track) => (
+          <div className="space-y-2">
+            {tracks.map((track, index) => (
               <Link
                 key={track.sha}
                 to={`/collection/${encodeURIComponent(collectionName!)}/album/${encodeURIComponent(albumName!)}/track/${encodeURIComponent(track.name)}`}
-                className="group"
+                className="group block"
               >
-                <div className="bg-zinc-900 rounded-lg overflow-hidden hover:bg-zinc-800 transition-colors">
-                  <div className="aspect-square bg-zinc-800 flex items-center justify-center relative overflow-hidden">
-                    <Folder className="w-24 h-24 text-zinc-600" />
+                <div className="bg-zinc-900 rounded-lg p-4 hover:bg-zinc-800 transition-colors flex items-center gap-4">
+                  <div className="text-zinc-500 font-mono text-sm w-8">
+                    {String(index + 1).padStart(2, '0')}
                   </div>
-                  <div className="p-4">
-                    <h3 className="font-medium group-hover:text-white transition-colors">
-                      {track.name}
-                    </h3>
-                  </div>
+                  <Play className="w-5 h-5 text-zinc-600 group-hover:text-white transition-colors" />
+                  <h3 className="flex-1 font-medium group-hover:text-white transition-colors">
+                    {track.name}
+                  </h3>
                 </div>
               </Link>
             ))}

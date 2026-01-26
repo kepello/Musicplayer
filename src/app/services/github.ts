@@ -124,11 +124,13 @@ export async function getFileContent(path: string): Promise<string> {
   }
 
   // Use raw.githubusercontent.com directly to avoid API rate limits
-  const rawUrl = `https://raw.githubusercontent.com/${OWNER}/${REPO}/${BRANCH}/${path}`;
+  // Add timestamp to prevent stale cached content
+  const timestamp = Date.now();
+  const rawUrl = `https://raw.githubusercontent.com/${OWNER}/${REPO}/${BRANCH}/${path}?t=${timestamp}`;
   
   try {
     const response = await fetch(rawUrl, {
-      cache: 'default'
+      cache: 'no-cache'
     });
     
     if (!response.ok) {
