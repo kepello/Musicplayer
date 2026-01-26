@@ -21,4 +21,6 @@ export const router = createBrowserRouter([
     path: '/collection/:collectionName/album/:albumName/track/:trackName',
     Component: Track,
   },
-]);
+], {
+  basename: '/Musicplayer',
+});
