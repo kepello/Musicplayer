@@ -191,7 +191,7 @@ export function TrackView() {
             <h1 className="text-4xl font-bold mb-4">{trackName}</h1>
             
             {readme && (
-              <div className="text-zinc-300 [&>p]:mb-4 md:columns-2 md:gap-8">
+              <div className="text-zinc-300 [&>p]:mb-4 lg:columns-2 lg:gap-8">
                 <Markdown skipHtml>{readme}</Markdown>
               </div>
             )}
