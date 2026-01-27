@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router';
 import { getRepoContents, getFileContent, getRawFileUrl, GitHubContent } from '@/app/services/github';
-import { ChevronLeft, Music, Play } from 'lucide-react';
+import { ChevronLeft, Music, Play, Download } from 'lucide-react';
 import Markdown from 'react-markdown';
 import { stripHtmlFromMarkdown } from '@/app/utils/markdown';
 
@@ -10,7 +10,14 @@ export function AlbumView() {
   const [tracks, setTracks] = useState<GitHubContent[]>([]);
   const [readme, setReadme] = useState<string>('');
   const [coverUrl, setCoverUrl] = useState<string | null>(null);
+  const [zipUrl, setZipUrl] = useState<string | null>(null);
+  const [playlistUrl, setPlaylistUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  
+  // Detect device type
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+  const isAndroid = /Android/i.test(navigator.userAgent);
 
   useEffect(() => {
     async function loadAlbum() {
@@ -40,6 +47,26 @@ export function AlbumView() {
         setCoverUrl(getRawFileUrl(coverFile.path));
       }
       
+      // Find zip package
+      const zipFile = contents.find(
+        item => 
+          item.type === 'file' && 
+          item.name.toLowerCase() === `${albumName.toLowerCase()}.zip`
+      );
+      if (zipFile) {
+        setZipUrl(getRawFileUrl(zipFile.path));
+      }
+      
+      // Find playlist file
+      const playlistFile = contents.find(
+        item => 
+          item.type === 'file' && 
+          item.name.toLowerCase() === `${albumName.toLowerCase()}.m3u8`
+      );
+      if (playlistFile) {
+        setPlaylistUrl(getRawFileUrl(playlistFile.path));
+      }
+      
       // Get track folders (directories)
       const dirs = contents.filter(item => item.type === 'dir');
       setTracks(dirs);
@@ -48,6 +75,28 @@ export function AlbumView() {
     
     loadAlbum();
   }, [collectionName, albumName]);
+
+  const handleDownloadAlbum = () => {
+    if (zipUrl) {
+      const a = document.createElement('a');
+      a.href = zipUrl;
+      a.download = `${albumName}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+  };
+  
+  const handleDownloadPlaylist = () => {
+    if (playlistUrl) {
+      const a = document.createElement('a');
+      a.href = playlistUrl;
+      a.download = `${albumName}.m3u8`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+  };
 
   if (loading) {
     return (
@@ -87,8 +136,61 @@ export function AlbumView() {
               <div className="text-sm text-zinc-400 mb-2">{collectionName}</div>
               <h1 className="text-4xl font-bold mb-4">{albumName}</h1>
               {readme && (
-                <div className="text-zinc-300 [&>p]:mb-4" style={{ columnCount: 2, columnGap: '2rem' }}>
+                <div className="text-zinc-300 [&>p]:mb-4 md:columns-2 md:gap-8">
                   <Markdown skipHtml>{readme}</Markdown>
+                </div>
+              )}
+              
+              {/* Download options based on device */}
+              {(zipUrl || playlistUrl) && (
+                <div className="mt-6 flex flex-wrap gap-3">
+                  {/* Mobile: Prioritize playlist (opens in native music app) */}
+                  {isMobile && playlistUrl && (
+                    <button
+                      onClick={handleDownloadPlaylist}
+                      className="px-6 py-2 bg-white text-black rounded-full font-medium hover:scale-105 transition-transform flex items-center gap-2"
+                      title={isIOS ? "Opens in Apple Music" : isAndroid ? "Opens in your music player" : "Download playlist"}
+                    >
+                      <Download className="w-4 h-4" />
+                      {isIOS ? "Open in Apple Music" : isAndroid ? "Open in Music Player" : "Download Playlist"}
+                    </button>
+                  )}
+                  
+                  {/* Desktop: Show both options */}
+                  {!isMobile && (
+                    <>
+                      {zipUrl && (
+                        <button
+                          onClick={handleDownloadAlbum}
+                          className="px-6 py-2 bg-white text-black rounded-full font-medium hover:scale-105 transition-transform flex items-center gap-2"
+                        >
+                          <Download className="w-4 h-4" />
+                          Download ZIP
+                        </button>
+                      )}
+                      {playlistUrl && (
+                        <button
+                          onClick={handleDownloadPlaylist}
+                          className="px-6 py-2 bg-zinc-800 text-white rounded-full font-medium hover:bg-zinc-700 transition-colors flex items-center gap-2"
+                        >
+                          <Music className="w-4 h-4" />
+                          Download Playlist
+                        </button>
+                      )}
+                    </>
+                  )}
+                  
+                  {/* Mobile: Also show zip as secondary option */}
+                  {isMobile && zipUrl && (
+                    <button
+                      onClick={handleDownloadAlbum}
+                      className="px-6 py-2 bg-zinc-800 text-white rounded-full font-medium hover:bg-zinc-700 transition-colors flex items-center gap-2"
+                      title="Download all files as ZIP"
+                    >
+                      <Download className="w-4 h-4" />
+                      Download ZIP
+                    </button>
+                  )}
                 </div>
               )}
             </div>

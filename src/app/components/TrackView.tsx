@@ -15,9 +15,15 @@ export function TrackView() {
   const { playTrack, currentTrack, isPlaying } = usePlayer();
   const [readme, setReadme] = useState<string>('');
   const [mp3Url, setMp3Url] = useState<string>('');
+  const [playlistUrl, setPlaylistUrl] = useState<string>('');
   const [lyrics, setLyrics] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [allTracks, setAllTracks] = useState<Track[]>([]);
+  
+  // Detect device type
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+  const isAndroid = /Android/i.test(navigator.userAgent);
 
   useEffect(() => {
     async function loadTrack() {
@@ -51,6 +57,14 @@ export function TrackView() {
       );
       if (mp3File) {
         setMp3Url(getRawFileUrl(mp3File.path));
+      }
+      
+      // Find playlist file
+      const playlistFile = contents.find(
+        item => item.type === 'file' && item.name.toLowerCase().endsWith('.m3u8')
+      );
+      if (playlistFile) {
+        setPlaylistUrl(getRawFileUrl(playlistFile.path));
       }
       
       // Find lyrics (LYRICS.txt or any .txt file)
@@ -127,6 +141,17 @@ export function TrackView() {
       document.body.removeChild(a);
     }
   };
+  
+  const handleDownloadPlaylist = () => {
+    if (playlistUrl) {
+      const a = document.createElement('a');
+      a.href = playlistUrl;
+      a.download = `${trackName}.m3u8`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+  };
 
   const trackPath = albumName 
     ? `${collectionName}/${albumName}/${trackName}`
@@ -173,7 +198,7 @@ export function TrackView() {
           </div>
           
           {mp3Url && (
-            <div className="flex gap-3 mb-8">
+            <div className="flex flex-wrap gap-3 mb-8">
               <button
                 onClick={handlePlay}
                 className="px-6 py-2 bg-white text-black rounded-full font-medium hover:scale-105 transition-transform flex items-center gap-2"
@@ -181,13 +206,42 @@ export function TrackView() {
                 <Play className="w-4 h-4" fill="currentColor" />
                 {isCurrentTrack && isPlaying ? 'Playing' : 'Play'}
               </button>
+              
+              {/* Mobile: Prioritize playlist */}
+              {isMobile && playlistUrl && (
+                <button
+                  onClick={handleDownloadPlaylist}
+                  className="px-6 py-2 bg-zinc-800 rounded-full font-medium hover:bg-zinc-700 transition-colors flex items-center gap-2"
+                  title={isIOS ? "Opens in Apple Music" : isAndroid ? "Opens in your music player" : "Download playlist"}
+                >
+                  <Music className="w-4 h-4" />
+                  {isIOS ? "Add to Apple Music" : isAndroid ? "Add to Music" : "Download Playlist"}
+                </button>
+              )}
+              
+              {/* Always show MP3 download */}
               <button
                 onClick={handleDownload}
-                className="px-6 py-2 bg-zinc-800 rounded-full font-medium hover:bg-zinc-700 transition-colors flex items-center gap-2"
+                className={`px-6 py-2 rounded-full font-medium transition-colors flex items-center gap-2 ${
+                  isMobile && playlistUrl 
+                    ? 'bg-zinc-800 hover:bg-zinc-700' 
+                    : 'bg-zinc-800 hover:bg-zinc-700'
+                }`}
               >
                 <Download className="w-4 h-4" />
-                Download
+                Download MP3
               </button>
+              
+              {/* Desktop: Show playlist as additional option */}
+              {!isMobile && playlistUrl && (
+                <button
+                  onClick={handleDownloadPlaylist}
+                  className="px-6 py-2 bg-zinc-800 rounded-full font-medium hover:bg-zinc-700 transition-colors flex items-center gap-2"
+                >
+                  <Music className="w-4 h-4" />
+                  Download Playlist
+                </button>
+              )}
             </div>
           )}
         </div>
