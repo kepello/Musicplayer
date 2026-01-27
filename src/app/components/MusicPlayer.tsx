@@ -54,7 +54,7 @@ export function MusicPlayer() {
   if (!currentTrack) return null;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-zinc-900 border-t border-zinc-800 p-3 z-50">
+    <div className="fixed bottom-0 left-0 right-0 bg-zinc-900 border-t border-zinc-800 p-3 z-50 supports-[backdrop-filter]:backdrop-blur-lg">
       <div className="max-w-screen-xl mx-auto flex items-center gap-4">
         {/* Controls - moved to left */}
         <div className="flex items-center gap-2">
