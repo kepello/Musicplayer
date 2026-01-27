@@ -136,7 +136,7 @@ export function AlbumView() {
               <div className="text-sm text-zinc-400 mb-2">{collectionName}</div>
               <h1 className="text-4xl font-bold mb-4">{albumName}</h1>
               {readme && (
-                <div className="text-zinc-300 [&>p]:mb-4 lg:columns-2 lg:gap-8">
+                <div className="text-zinc-300 [&>p]:mb-4 columns-1 lg:columns-2 lg:gap-8">
                   <Markdown skipHtml>{readme}</Markdown>
                 </div>
               )}
