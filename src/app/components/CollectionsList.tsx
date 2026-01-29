@@ -52,8 +52,10 @@ export function CollectionsList() {
         if (validTracks.length > 0) {
           tracksMap.set(dir.name, validTracks);
         }
+        console.log(`Loaded ${validTracks.length} tracks for collection: ${dir.name}`);
       }
       setCollectionTracks(tracksMap);
+      console.log('All collections loaded:', tracksMap);
       
       setLoading(false);
     }
@@ -118,6 +120,7 @@ export function CollectionsList() {
                       e.stopPropagation();
                       if (tracks.length === 0) return;
                       // Generate collection playlist
+                      console.log(`Generating playlist for ${collection.name} with ${tracks.length} tracks:`, tracks);
                       let playlistContent = '#EXTM3U\n#EXTENC:UTF-8\n\n';
                       tracks.forEach(track => {
                         playlistContent += `#EXTINF:-1,${track.name}\n${track.url}\n\n`;
