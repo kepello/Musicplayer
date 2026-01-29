@@ -118,7 +118,7 @@ export function AlbumView() {
   
   const generatePlaylist = async () => {
     // Generate playlist content dynamically from tracks
-    let playlistContent = '#EXTM3U\n#EXTENC:UTF-8\n\n';
+    let playlistContent = '#EXTM3U\n#EXTENC:UTF-8\n';
     
     for (const track of tracks) {
       const trackPath = `${collectionName}/${albumName}/${track.name}`;
@@ -129,10 +129,11 @@ export function AlbumView() {
       
       if (mp3File) {
         const mp3Url = getRawFileUrl(mp3File.path);
-        playlistContent += `#EXTINF:-1,${track.name}\n`;
-        playlistContent += `${mp3Url}\n\n`;
+        playlistContent += `\n#EXTINF:-1,${track.name}\n`;
+        playlistContent += `${mp3Url}`;
       }
     }
+    playlistContent += '\n';
     
     return playlistContent;
   };
@@ -205,10 +206,11 @@ export function AlbumView() {
                     <button
                       onClick={async () => {
                         // Generate album playlist
-                        let playlistContent = '#EXTM3U\n#EXTENC:UTF-8\n\n';
+                        let playlistContent = '#EXTM3U\n#EXTENC:UTF-8\n';
                         allTracks.forEach(track => {
-                          playlistContent += `#EXTINF:-1,${track.name}\n${track.url}\n\n`;
+                          playlistContent += `\n#EXTINF:-1,${track.name}\n${track.url}`;
                         });
+                        playlistContent += '\n';
                         const blob = new Blob([playlistContent], { type: 'audio/x-mpegurl' });
                         const url = URL.createObjectURL(blob);
                         const a = document.createElement('a');
