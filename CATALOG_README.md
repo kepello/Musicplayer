@@ -19,19 +19,23 @@ Note: Collections and albums are the same thing - collections ARE albums.
 ## File Location
 
 The catalog file should be placed at the root of the music repository:
+
 ```
 https://raw.githubusercontent.com/{owner}/{repo}/main/catalog.json
 ```
 
 For the current app configuration:
+
 ```
 https://raw.githubusercontent.com/kepello/music/main/catalog.json
 ```
 
 ## JSON Schema
+
 ver": "cover.jpg",
-  "readme": "# My Music Library\n\nWelcome to my music collection...",
-  "co
+"readme": "# My Music Library\n\nWelcome to my music collection...",
+"co
+
 ### Root Structure
 
 ```json
@@ -122,51 +126,52 @@ ver": "cover.jpg",
 
 | Field | Typ (Library Root)
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `version` | string | Yes | Schema version (currently "1.0") |
-| `generatedAt` | string | Yes | ISO 8601 timestamp of when catalog was generated |
-| `repository` | object | Yes | Repository information |
-| `repository.owner` | string | Yes | GitHub repository owner |
-| `repository.repo` | string | Yes | GitHub repository name |
-| `repository.branch` | string | Yes | Branch name (typically "main") |
-| `cover` | string | No | Relative path to library cover image (800×800 pixels) |
-| `readme` | string | No | Full markdown content of library README.md |
-| `collections` | arr (Album)
+| Field               | Type        | Required | Description                                           |
+| ------------------- | ----------- | -------- | ----------------------------------------------------- |
+| `version`           | string      | Yes      | Schema version (currently "1.0")                      |
+| `generatedAt`       | string      | Yes      | ISO 8601 timestamp of when catalog was generated      |
+| `repository`        | object      | Yes      | Repository information                                |
+| `repository.owner`  | string      | Yes      | GitHub repository owner                               |
+| `repository.repo`   | string      | Yes      | GitHub repository name                                |
+| `repository.branch` | string      | Yes      | Branch name (typically "main")                        |
+| `cover`             | string      | No       | Relative path to library cover image (800×800 pixels) |
+| `readme`            | string      | No       | Full markdown content of library README.md            |
+| `collections`       | arr (Album) |
 
 Collections and albums are the same thing. Each collection is an album containing tracks.
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `name` | string | Yes | Folder name (display name) |
-| `path` | string | Yes | Relative path from repository root |
-| `readme` | string | No | Full markdown content of README.md if exists |
-| `cover` | string | No | Relative path to cover image (800×800 pixels) |
-| `zipM4A` | string | No | Relative path to M4A format ZIP file |
-| `zipMP3` | string | No | Relative path to MP3 format ZIP file |
-| `playlistM4A` | string | No | Relative path to M4A format M3U8 playlist file |
-| `playlistMP3` | string | No | Relative path to MP3 format M3U8 playlist file |
-| `tracks` | array | Yes | Array of track objects |
+| Field         | Type   | Required | Description                                    |
+| ------------- | ------ | -------- | ---------------------------------------------- |
+| `name`        | string | Yes      | Folder name (display name)                     |
+| `path`        | string | Yes      | Relative path from repository root             |
+| `readme`      | string | No       | Full markdown content of README.md if exists   |
+| `cover`       | string | No       | Relative path to cover image (800×800 pixels)  |
+| `zipM4A`      | string | No       | Relative path to M4A format ZIP file           |
+| `zipMP3`      | string | No       | Relative path to MP3 format ZIP file           |
+| `playlistM4A` | string | No       | Relative path to M4A format M3U8 playlist file |
+| `playlistMP3` | string | No       | Relative path to MP3 format M3U8 playlist file |
+| `tracks`      | array  | Yes      | Array of track objects                         |
 
 ### Track Object
 
 Represents an individual track folder.
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `name` | string | Yes | Folder name (display name) |
-| `path` | string | Yes | Relative path from repository root |
-| `readme` | string | No | Full markdown content of README.md if exists |
-| `mp3` | string | No | Relative path to MP3 audio file |
-| `m4a` | string | No | Relative path to M4A audio file |
-| `playlist` | string | No | Relative path to M3U8 playlist file |
-| `lyrics` | string | No | Relative path to lyrics text file |
+| Field      | Type   | Required | Description                                  |
+| ---------- | ------ | -------- | -------------------------------------------- |
+| `name`     | string | Yes      | Folder name (display name)                   |
+| `path`     | string | Yes      | Relative path from repository root           |
+| `readme`   | string | No       | Full markdown content of README.md if exists |
+| `mp3`      | string | No       | Relative path to MP3 audio file              |
+| `m4a`      | string | No       | Relative path to M4A audio file              |
+| `playlist` | string | No       | Relative path to M3U8 playlist file          |
+| `lyrics`   | string | No       | Relative path to lyrics text file            |
 
 ## Important Notes
 
 ### 1. All Paths Are Relative
 
 All file paths in the catalog should be relative to the repository root. The app will construct full URLs using:
+
 ```
 https://raw.githubusercontent.com/{owner}/{repo}/{branch}/{path}
 ```
@@ -174,6 +179,7 @@ https://raw.githubusercontent.com/{owner}/{repo}/{branch}/{path}
 ### 2. Optional Fields
 
 Fields marked as "No" in the Required column can be `null` or omitted if the file doesn't exist. This is especially important for:
+
 - README files (not all folders have them)
 - Cover images (not all collections/albums have them)
 - Lyrics files (most tracks don't have them)
@@ -183,6 +189,7 @@ Fields marked as "No" in the Required column can be `null` or omitted if the fil
 ### 3. README Content
 
 README content should be stored as the full markdown text, not as a file path. The app will:
+
 - Strip HTML comments from the markdown before display
 - Render it using a markdown parser
 - Display it in the respective views
@@ -192,6 +199,7 @@ README content should be stored as the full markdown text, not as a file path. T
 The catalog supports two structures:
 
 **Three-level hierarchy** (Collection → Album → Track):
+
 ```
 Classical/
   └─ Beethoven-Symphony-No-9/
@@ -199,17 +207,20 @@ Classical/
 ```
 
 **Two-level hierarchy** (Collection → Track):
-```
+
+````
 Jazz/
   └─ Take-Five/
 ```uses a simple three-level hierarchy:
 
 **Library → Collection (Album) → Track**:
-```
+````
+
 Library (root)
-  └─ Beethoven-Symphony-No-9/  (Collection/Album)
-      └─ 01-Allegro-ma-non-troppo/  (Track)
-      └─ 02-Molto-vivace/  (Track)
+└─ Beethoven-Symphony-No-9/ (Collection/Album)
+└─ 01-Allegro-ma-non-troppo/ (Track)
+└─ 02-Molto-vivace/ (Track)
+
 ```
 
 Collections ARE albums. There is no nested album structure - each collection directly contains tracks
@@ -242,6 +253,7 @@ git push
 ```
 
 The generation script should:
+
 1. Traverse all directories in the repository
 2. Read README.md files and store their content
 3. Find all audio files, cover images, and supplementary files
@@ -253,8 +265,11 @@ The generation script should:
 Once the catalog file exists, the app should:
 
 1. Fetch the catalog once at startup:
+
 ```typescript
-const response = await fetch('https://raw.githubusercontent.com/kepello/music/main/catalog.json');
+const response = await fetch(
+  "https://raw.githubusercontent.com/kepello/music/main/catalog.json",
+);
 const catalog = await response.json();
 ```
 
@@ -263,6 +278,7 @@ const catalog = await response.json();
 3. Use the catalog data directly instead of making GitHub API calls
 
 4. Construct file URLs using the pattern:
+
 ```typescript
 function getRawFileUrl(path: string): string {
   return `https://raw.githubusercontent.com/${OWNER}/${REPO}/${BRANCH}/${path}`;
@@ -277,15 +293,16 @@ function getRawFileUrl(path: string): string {
 ✅ **Faster Loading**: No need to traverse directories recursively  
 ✅ **Offline Capable**: Catalog can be cached indefinitely  
 ✅ **Predictable**: No API failures or timeouts  
-✅ **Scalable**: Works with any repository size  
+✅ **Scalable**: Works with any repository size
 
 ## Versioning
 
 The `version` field allows for future schema changes. If the schema needs to be updated:
+
 - Increment the version number (e.g., "1.1", "2.0")
 - Document changes in this README
 - Update generation scripts and app code accordingly
 - Consider supporting multiple versions for backward compatibility
-  
+
 ✅ **Simple Structure**: Library → Collections (Albums) → Tracks  
 ✅ **Optimized Images**: All cover images are 800×800 pixels
