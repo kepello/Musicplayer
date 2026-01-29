@@ -1,7 +1,7 @@
 import { CollectionsList } from '@/app/components/CollectionsList';
 import { Music, AlertCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { getRepoContents, getFileContent, getRawFileUrl } from '@/app/services/github';
+import { getCatalog, getFileContent, getRawFileUrl } from '@/app/services/github';
 import Markdown from 'react-markdown';
 import { stripHtmlFromMarkdown } from '@/app/utils/markdown';
 
@@ -14,37 +14,21 @@ export function Home() {
   useEffect(() => {
     async function loadRootContent() {
       try {
-        const contents = await getRepoContents('');
+        const catalog = await getCatalog();
         
-        // Check if we got an empty array (likely rate limited)
-        if (contents.length === 0) {
-          setError('Unable to load content. This might be due to GitHub API rate limiting. Please try again in a few minutes, or add a GitHub token to increase the rate limit.');
+        if (!catalog) {
+          setError('Unable to load music catalog. The catalog.json file might be missing or inaccessible.');
           setLoading(false);
           return;
         }
         
-        // Find README
-        const readmeFile = contents.find(
-          item => item.type === 'file' && item.name.toLowerCase() === 'readme.md'
-        );
-        if (readmeFile) {
-          const content = await getFileContent(readmeFile.path);
-          setReadme(stripHtmlFromMarkdown(content));
+        // Load README and cover from catalog (if provided)
+        if (catalog.readme) {
+          setReadme(stripHtmlFromMarkdown(catalog.readme));
         }
         
-        // Find cover
-        const coverFile = contents.find(
-          item => 
-            item.type === 'file' && 
-            item.name.toLowerCase().startsWith('cover') &&
-            /\.(jpg|jpeg|png|gif|webp)$/i.test(item.name)
-        );
-        if (coverFile) {
-          const url = getRawFileUrl(coverFile.path);
-          console.log('Cover found:', coverFile.name, 'URL:', url);
-          setCoverUrl(url);
-        } else {
-          console.log('No cover image found. Available files:', contents.map(c => c.name));
+        if (catalog.cover) {
+          setCoverUrl(getRawFileUrl(catalog.cover));
         }
         
         setLoading(false);

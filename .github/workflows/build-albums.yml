@@ -3,8 +3,9 @@ name: Build Album Packages
 on:
   push:
     paths:
-      - "**/*.mp3"
-      - "**/README.md"
+      - "music/**/*.mp3"
+      - "music/**/README.md"
+      - ".gitmodules"
   workflow_dispatch:
 
 jobs:
@@ -18,14 +19,25 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          submodules: true
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure git for submodule
+        run: |
+          cd music
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
 
       - name: Build track playlists
         run: |
           #!/bin/bash
           set -e
 
-          # Get repo info for URLs
-          GITHUB_REPO="${GITHUB_REPOSITORY:-owner/repo}"
+          # Music repository for URLs (not this app repo)
+          MUSIC_REPO="kepello/music"
+
+          # Change to music submodule directory
+          cd music
 
           # Function to create single track playlist
           create_track_playlist() {
@@ -43,7 +55,7 @@ jobs:
               
               # Get MP3 URL
               mp3_relative_path="${mp3_file#./}"
-              mp3_url="https://raw.githubusercontent.com/$GITHUB_REPO/main/$mp3_relative_path"
+              mp3_url="https://raw.githubusercontent.com/$MUSIC_REPO/main/$mp3_relative_path"
               
               echo "#EXTINF:-1,$track_name" >> "$playlist_file"
               echo "$mp3_url" >> "$playlist_file"
@@ -83,6 +95,12 @@ jobs:
           #!/bin/bash
           set -e
 
+          # Music repository for URLs
+          MUSIC_REPO="kepello/music"
+
+          # Change to music submodule directory
+          cd music
+
           # Function to create album package
           create_album_package() {
             local collection="$1"
@@ -109,9 +127,6 @@ jobs:
             echo "#EXTM3U" > "$standalone_playlist"
             echo "#EXTENC:UTF-8" >> "$standalone_playlist"
             
-            # Get repo info for URLs
-            GITHUB_REPO="${GITHUB_REPOSITORY:-owner/repo}"
-            
             # Process each track directory in order
             for track_dir in "$album_path"/*/; do
               if [ ! -d "$track_dir" ]; then
@@ -137,7 +152,7 @@ jobs:
                 
                 # Add to standalone playlist (full URL)
                 mp3_relative_path="${mp3_file#./}"
-                mp3_url="https://raw.githubusercontent.com/$GITHUB_REPO/main/$mp3_relative_path"
+                mp3_url="https://raw.githubusercontent.com/$MUSIC_REPO/main/$mp3_relative_path"
                 echo "#EXTINF:-1,$track_name" >> "$standalone_playlist"
                 echo "$mp3_url" >> "$standalone_playlist"
                 
@@ -193,6 +208,8 @@ jobs:
 
       - name: Commit album packages
         run: |
+          cd music
+
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
 

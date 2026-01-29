@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router';
-import { getRepoContents, getFileContent, getRawFileUrl, GitHubContent } from '@/app/services/github';
+import { getCatalog, getFileContent, getRawFileUrl, CatalogTrack } from '@/app/services/github';
 import { usePlayer, Track } from '@/app/contexts/PlayerContext';
-import { ChevronLeft, Play, Download, Music } from 'lucide-react';
+import { ChevronLeft, Play, Download, Music, List } from 'lucide-react';
 import Markdown from 'react-markdown';
 import { stripHtmlFromMarkdown } from '@/app/utils/markdown';
 
@@ -13,13 +13,9 @@ export function TrackView() {
     trackName: string;
   }>();
   const { playTrack, currentTrack, isPlaying } = usePlayer();
-  const [readme, setReadme] = useState<string>('');
-  const [mp3Url, setMp3Url] = useState<string>('');
-  const [m4aUrl, setM4aUrl] = useState<string>('');
-  const [playlistUrl, setPlaylistUrl] = useState<string>('');
-  const [lyrics, setLyrics] = useState<string>('');
-  const [loading, setLoading] = useState(true);
+  const [track, setTrack] = useState<CatalogTrack | null>(null);
   const [allTracks, setAllTracks] = useState<Track[]>([]);
+  const [loading, setLoading] = useState(true);
   
   // Detect device type
   const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
@@ -32,88 +28,40 @@ export function TrackView() {
       
       setLoading(true);
       
-      // Determine the path based on whether we have an album
-      const trackPath = albumName 
-        ? `${collectionName}/${albumName}/${trackName}`
-        : `${collectionName}/${trackName}`;
-      const parentPath = albumName 
-        ? `${collectionName}/${albumName}`
-        : collectionName;
-      
-      // Load current track
-      const contents = await getRepoContents(trackPath);
-      
-      // Find README
-      const readmeFile = contents.find(
-        item => item.type === 'file' && item.name.toLowerCase() === 'readme.md'
-      );
-      if (readmeFile) {
-        const content = await getFileContent(readmeFile.path);
-        setReadme(stripHtmlFromMarkdown(content));
+      const catalog = await getCatalog();
+      if (!catalog) {
+        setLoading(false);
+        return;
       }
       
-      // Find MP3
-      const mp3File = contents.find(
-        item => item.type === 'file' && item.name.toLowerCase().endsWith('.mp3')
-      );
-      if (mp3File) {
-        setMp3Url(getRawFileUrl(mp3File.path));
+      // Find the collection (which is the album)
+      const collection = catalog.collections.find(c => c.name === collectionName);
+      if (!collection) {
+        setLoading(false);
+        return;
       }
       
-      // Find M4A
-      const m4aFile = contents.find(
-        item => item.type === 'file' && item.name.toLowerCase().endsWith('.m4a')
-      );
-      if (m4aFile) {
-        setM4aUrl(getRawFileUrl(m4aFile.path));
+      // Find the track in the collection
+      const foundTrack = collection.tracks.find(t => t.name === trackName);
+      
+      if (!foundTrack) {
+        setLoading(false);
+        return;
       }
       
-      // Find playlist file (now contains both M4A and MP3 entries)
-      const playlistFile = contents.find(
-        item => item.type === 'file' && item.name.toLowerCase() === `${trackName.toLowerCase()}.m3u8`
-      );
-      if (playlistFile) {
-        setPlaylistUrl(getRawFileUrl(playlistFile.path));
-      }
+      setTrack(foundTrack);
       
-      // Find lyrics (LYRICS.txt or any .txt file)
-      const lyricsFile = contents.find(
-        item => item.type === 'file' && item.name.toLowerCase().endsWith('.txt')
-      );
-      if (lyricsFile) {
-        const content = await getFileContent(lyricsFile.path);
-        setLyrics(content);
-      }
+      // Build track list for playlist context
+      const tracks: Track[] = collection.tracks
+        .filter(t => t.mp3)
+        .map(t => ({
+          path: t.path,
+          name: t.name,
+          url: getRawFileUrl(t.mp3!),
+          collection: collectionName,
+        }));
       
-      // Load all tracks from parent (collection or album)
-      const parentContents = await getRepoContents(parentPath);
-      const trackFolders = parentContents.filter(item => item.type === 'dir');
-      
-      // Load mp3 URLs for all tracks
-      const tracksWithUrls = await Promise.all(
-        trackFolders.map(async (folder) => {
-          const folderPath = `${parentPath}/${folder.name}`;
-          const folderContents = await getRepoContents(folderPath);
-          const mp3 = folderContents.find(
-            item => item.type === 'file' && item.name.toLowerCase().endsWith('.mp3')
-          );
-          
-          if (mp3) {
-            return {
-              path: folderPath,
-              name: folder.name,
-              url: getRawFileUrl(mp3.path),
-              album: albumName || collectionName,
-              collection: collectionName,
-            } as Track;
-          }
-          return null;
-        })
-      );
-      
-      const validTracks = tracksWithUrls.filter((t): t is Track => t !== null);
-      setAllTracks(validTracks);
-      
+      setAllTracks(tracks);
       setLoading(false);
     }
     
@@ -121,19 +69,26 @@ export function TrackView() {
   }, [collectionName, albumName, trackName]);
 
   const handlePlay = () => {
-    if (mp3Url) {
-      const trackPath = albumName 
-        ? `${collectionName}/${albumName}/${trackName}`
-        : `${collectionName}/${trackName}`;
+    if (track?.mp3) {
+      const mp3Url = getRawFileUrl(track.mp3);
+      const trackPath = track.path;
+      
+      // Load lyrics if available
+      let lyricsContent = '';
+      if (track.lyrics) {
+        // We'll need to fetch lyrics content
+        getFileContent(track.lyrics).then(content => {
+          lyricsContent = content;
+        });
+      }
       
       playTrack(
         {
           path: trackPath,
           name: trackName!,
           url: mp3Url,
-          album: albumName || collectionName,
           collection: collectionName,
-          lyrics: lyrics,
+          lyrics: lyricsContent,
         },
         allTracks // Pass all tracks as playlist context
       );
@@ -141,9 +96,9 @@ export function TrackView() {
   };
 
   const handleDownload = () => {
-    if (mp3Url) {
+    if (track?.mp3) {
       const a = document.createElement('a');
-      a.href = mp3Url;
+      a.href = getRawFileUrl(track.mp3);
       a.download = `${trackName}.mp3`;
       document.body.appendChild(a);
       a.click();
@@ -154,26 +109,26 @@ export function TrackView() {
   const generatePlaylist = () => {
     // Generate playlist content for single track with both formats
     let playlistContent = '#EXTM3U\n#EXTENC:UTF-8\n\n';
-    if (m4aUrl) {
+    if (track?.m4a) {
       playlistContent += `#EXTINF:-1,${trackName} (M4A)\n`;
-      playlistContent += `${m4aUrl}\n\n`;
+      playlistContent += `${getRawFileUrl(track.m4a)}\n\n`;
     }
-    if (mp3Url) {
+    if (track?.mp3) {
       playlistContent += `#EXTINF:-1,${trackName} (MP3)\n`;
-      playlistContent += `${mp3Url}\n`;
+      playlistContent += `${getRawFileUrl(track.mp3)}\n`;
     }
     return playlistContent;
   };
   
   const handleDownloadPlaylist = () => {
-    if (playlistUrl) {
+    if (track?.playlist) {
       const a = document.createElement('a');
-      a.href = playlistUrl;
+      a.href = getRawFileUrl(track.playlist);
       a.download = `${trackName}.m3u8`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-    } else if (mp3Url) {
+    } else if (track?.mp3) {
       // Generate playlist on-the-fly
       const playlistContent = generatePlaylist();
       const blob = new Blob([playlistContent], { type: 'audio/x-mpegurl' });
@@ -188,15 +143,11 @@ export function TrackView() {
     }
   };
 
-  const trackPath = albumName 
-    ? `${collectionName}/${albumName}/${trackName}`
-    : `${collectionName}/${trackName}`;
+  const trackPath = track?.path || '';
   const isCurrentTrack = currentTrack?.path === trackPath;
   
-  const backLink = albumName 
-    ? `/collection/${encodeURIComponent(collectionName!)}/album/${encodeURIComponent(albumName)}`
-    : `/collection/${encodeURIComponent(collectionName!)}`;
-  const backText = albumName || collectionName;
+  const backLink = `/collection/${encodeURIComponent(collectionName!)}`;
+  const backText = collectionName;
 
   if (loading) {
     return (
@@ -225,14 +176,14 @@ export function TrackView() {
           <div className="bg-zinc-900 rounded-lg p-6 mb-6">
             <h1 className="text-4xl font-bold mb-4">{trackName}</h1>
             
-            {readme && (
+            {track?.readme && (
               <div className="text-zinc-300 [&>p]:mb-4 columns-1 lg:columns-2 lg:gap-8">
-                <Markdown skipHtml>{readme}</Markdown>
+                <Markdown skipHtml>{stripHtmlFromMarkdown(track.readme)}</Markdown>
               </div>
             )}
           </div>
           
-          {(mp3Url || m4aUrl) && (
+          {(track?.mp3 || track?.m4a) && (
             <div className="flex flex-wrap gap-3 mb-8">
               <button
                 onClick={handlePlay}
@@ -243,7 +194,7 @@ export function TrackView() {
               </button>
               
               {/* Mobile: Prioritize playlist */}
-              {isMobile && (mp3Url || m4aUrl) && (
+              {isMobile && (track?.mp3 || track?.m4a) && (
                 <button
                   onClick={handleDownloadPlaylist}
                   className="p-3 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full transition-all"
@@ -254,7 +205,7 @@ export function TrackView() {
               )}
               
               {/* Always show MP3 download if available */}
-              {mp3Url && (
+              {track?.mp3 && (
                 <button
                   onClick={handleDownload}
                   className="p-3 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full transition-all"
@@ -267,11 +218,11 @@ export function TrackView() {
               {/* Desktop: Show M4A and playlist options */}
               {!isMobile && (
                 <>
-                  {m4aUrl && (
+                  {track?.m4a && (
                     <button
                       onClick={() => {
                         const a = document.createElement('a');
-                        a.href = m4aUrl;
+                        a.href = getRawFileUrl(track.m4a!);
                         a.download = `${trackName}.m4a`;
                         document.body.appendChild(a);
                         a.click();
@@ -283,7 +234,7 @@ export function TrackView() {
                       <Download className="w-5 h-5 text-white" />
                     </button>
                   )}
-                  {(mp3Url || m4aUrl) && (
+                  {(track?.mp3 || track?.m4a) && (
                     <button
                       onClick={handleDownloadPlaylist}
                       className="p-3 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full transition-all"
@@ -298,14 +249,14 @@ export function TrackView() {
           )}
         </div>
 
-        {lyrics && (
+        {track?.lyrics && (
           <div className="bg-zinc-900 rounded-lg p-6">
             <h2 className="text-xl font-bold mb-4">Lyrics</h2>
-            <div className="text-zinc-300 whitespace-pre-wrap">{lyrics}</div>
+            <div className="text-zinc-300 whitespace-pre-wrap">{track.lyrics}</div>
           </div>
         )}
 
-        {!mp3Url && !m4aUrl && (
+        {!track?.mp3 && !track?.m4a && (
           <div className="flex flex-col items-center justify-center py-20">
             <Music className="w-16 h-16 text-zinc-600 mb-4" />
             <div className="text-zinc-400">No audio file found</div>

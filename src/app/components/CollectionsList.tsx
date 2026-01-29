@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router';
-import { getRepoContents, getRawFileUrl, GitHubContent } from '@/app/services/github';
+import { getCatalog, getRawFileUrl, CatalogCollection } from '@/app/services/github';
 import { Folder, Music, Play, Download, List } from 'lucide-react';
 import { usePlayer, Track } from '@/app/contexts/PlayerContext';
 
 export function CollectionsList() {
-  const [collections, setCollections] = useState<GitHubContent[]>([]);
+  const [collections, setCollections] = useState<CatalogCollection[]>([]);
   const [collectionTracks, setCollectionTracks] = useState<Map<string, Track[]>>(new Map());
   const [loading, setLoading] = useState(true);
   const { playPlaylist } = usePlayer();
@@ -13,44 +13,36 @@ export function CollectionsList() {
   useEffect(() => {
     async function loadCollections() {
       setLoading(true);
-      const contents = await getRepoContents('');
-      // Filter only directories, exclude special folders, and reverse the order
-      const dirs = contents.filter(item => 
-        item.type === 'dir' && 
-        !item.name.startsWith('.') && 
-        item.name !== 'node_modules'
-      ).reverse();
-      setCollections(dirs);
+      const catalog = await getCatalog();
       
-      // Load tracks for each collection
+      if (!catalog) {
+        setLoading(false);
+        return;
+      }
+      
+      // Reverse the order of collections
+      const reversedCollections = [...catalog.collections].reverse();
+      setCollections(reversedCollections);
+      
+      // Convert catalog tracks to player tracks
       const tracksMap = new Map<string, Track[]>();
-      for (const dir of dirs) {
-        const dirContents = await getRepoContents(dir.path);
-        const trackFolders = dirContents.filter(item => item.type === 'dir');
+      for (const collection of reversedCollections) {
+        const tracks: Track[] = [];
         
-        const tracks = await Promise.all(
-          trackFolders.map(async (folder) => {
-            const folderPath = `${dir.path}/${folder.name}`;
-            const folderContents = await getRepoContents(folderPath);
-            const mp3 = folderContents.find(
-              item => item.type === 'file' && item.name.toLowerCase().endsWith('.mp3')
-            );
-            
-            if (mp3) {
-              return {
-                path: folderPath,
-                name: folder.name,
-                url: getRawFileUrl(mp3.path),
-                collection: dir.name,
-              } as Track;
-            }
-            return null;
-          })
-        );
+        // Collections have tracks directly (no nested albums)
+        for (const track of collection.tracks) {
+          if (track.mp3) {
+            tracks.push({
+              path: track.path,
+              name: track.name,
+              url: getRawFileUrl(track.mp3),
+              collection: collection.name,
+            });
+          }
+        }
         
-        const validTracks = tracks.filter((t): t is Track => t !== null);
-        if (validTracks.length > 0) {
-          tracksMap.set(dir.name, validTracks);
+        if (tracks.length > 0) {
+          tracksMap.set(collection.name, tracks);
         }
       }
       setCollectionTracks(tracksMap);
@@ -84,13 +76,13 @@ export function CollectionsList() {
         const tracks = collectionTracks.get(collection.name) || [];
         return (
           <Link
-            key={collection.sha}
+            key={collection.path}
             to={`/collection/${encodeURIComponent(collection.name)}`}
             className="group block relative"
           >
             <div className="bg-zinc-900 rounded-lg overflow-hidden hover:bg-zinc-800 transition-colors">
               <div className="aspect-square bg-zinc-800 flex items-center justify-center relative overflow-hidden">
-                <CollectionCover path={collection.path} />
+                <CollectionCover collection={collection} />
               </div>
               <div className="p-4 relative">
                 <h3 className="font-medium group-hover:text-white transition-colors">
@@ -149,34 +141,14 @@ export function CollectionsList() {
   );
 }
 
-function CollectionCover({ path }: { path: string }) {
-  const [coverUrl, setCoverUrl] = useState<string | null>(null);
-
-  useEffect(() => {
-    async function findCover() {
-      const contents = await getRepoContents(path);
-      const coverFile = contents.find(
-        item => 
-          item.type === 'file' && 
-          item.name.toLowerCase().startsWith('cover') &&
-          /\.(jpg|jpeg|png|gif|webp)$/i.test(item.name)
-      );
-      
-      if (coverFile) {
-        setCoverUrl(getRawFileUrl(coverFile.path));
-      }
-    }
-    
-    findCover();
-  }, [path]);
-
-  if (!coverUrl) {
+function CollectionCover({ collection }: { collection: CatalogCollection }) {
+  if (!collection.cover) {
     return <Folder className="w-24 h-24 text-zinc-600" />;
   }
 
   return (
     <img
-      src={coverUrl}
+      src={getRawFileUrl(collection.cover)}
       alt="Collection cover"
       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
     />

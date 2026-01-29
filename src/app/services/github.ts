@@ -37,6 +37,46 @@ export interface GitHubContent {
   type: 'file' | 'dir';
 }
 
+// Catalog types - Simplified structure: Library → Collections (Albums) → Tracks
+export interface CatalogTrack {
+  name: string;
+  path: string;
+  readme?: string;
+  mp3?: string;
+  m4a?: string;
+  playlist?: string;
+  lyrics?: string | null;
+}
+
+// Collections are albums - they are the same thing
+export interface CatalogCollection {
+  name: string;
+  path: string;
+  readme?: string;
+  cover?: string;  // 800x800 image
+  zipM4A?: string;
+  zipMP3?: string;
+  playlistM4A?: string;
+  playlistMP3?: string;
+  tracks: CatalogTrack[];
+}
+
+export interface Catalog {
+  version: string;
+  generatedAt: string;
+  repository: {
+    owner: string;
+    repo: string;
+    branch: string;
+  };
+  cover?: string;  // Library cover image (800x800)
+  readme?: string; // Library readme
+  collections: CatalogCollection[];  // Collections are the albums
+}
+
+// Alias for clarity - collections and albums are the same
+export type CatalogAlbum = CatalogCollection;
+
 export async function getRepoContents(path: string = ''): Promise<GitHubContent[]> {
   // Check cache first
   const cacheKey = `contents:${path}`;
@@ -124,4 +164,45 @@ export function getRawFileUrl(path: string): string {
   // Add timestamp as cache buster to force fresh image loads
   const timestamp = Date.now();
   return `https://raw.githubusercontent.com/${OWNER}/${REPO}/${BRANCH}/${path}?t=${timestamp}`;
+}
+
+// Cache for the catalog data
+let catalogCache: Catalog | null = null;
+let catalogCacheTime: number = 0;
+const CATALOG_CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+export async function getCatalog(forceRefresh: boolean = false): Promise<Catalog | null> {
+  // Check if we have a valid cached catalog
+  if (!forceRefresh && catalogCache && Date.now() - catalogCacheTime < CATALOG_CACHE_DURATION) {
+    return catalogCache;
+  }
+
+  try {
+    const catalogUrl = `https://raw.githubusercontent.com/${OWNER}/${REPO}/${BRANCH}/catalog.json`;
+    const response = await fetch(catalogUrl, {
+      cache: 'no-cache'
+    });
+
+    if (!response.ok) {
+      console.warn('catalog.json not found or error fetching it:', response.status);
+      return null;
+    }
+
+    const catalog: Catalog = await response.json();
+    
+    // Cache the catalog
+    catalogCache = catalog;
+    catalogCacheTime = Date.now();
+    
+    console.log('Catalog loaded successfully:', {
+      version: catalog.version,
+      generatedAt: catalog.generatedAt,
+      collectionsCount: catalog.collections.length
+    });
+    
+    return catalog;
+  } catch (error) {
+    console.error('Error fetching catalog:', error);
+    return null;
+  }
 }
