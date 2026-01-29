@@ -21,6 +21,40 @@ export function CollectionsList() {
         item.name !== 'node_modules'
       ).reverse();
       setCollections(dirs);
+      
+      // Load tracks for each collection
+      const tracksMap = new Map<string, Track[]>();
+      for (const dir of dirs) {
+        const dirContents = await getRepoContents(dir.path);
+        const trackFolders = dirContents.filter(item => item.type === 'dir');
+        
+        const tracks = await Promise.all(
+          trackFolders.map(async (folder) => {
+            const folderPath = `${dir.path}/${folder.name}`;
+            const folderContents = await getRepoContents(folderPath);
+            const mp3 = folderContents.find(
+              item => item.type === 'file' && item.name.toLowerCase().endsWith('.mp3')
+            );
+            
+            if (mp3) {
+              return {
+                path: folderPath,
+                name: folder.name,
+                url: getRawFileUrl(mp3.path),
+                collection: dir.name,
+              } as Track;
+            }
+            return null;
+          })
+        );
+        
+        const validTracks = tracks.filter((t): t is Track => t !== null);
+        if (validTracks.length > 0) {
+          tracksMap.set(dir.name, validTracks);
+        }
+      }
+      setCollectionTracks(tracksMap);
+      
       setLoading(false);
     }
     
@@ -57,44 +91,47 @@ export function CollectionsList() {
               <div className="bg-zinc-900 rounded-lg overflow-hidden hover:bg-zinc-800 transition-colors">
                 <div className="aspect-square bg-zinc-800 flex items-center justify-center relative overflow-hidden">
                   <CollectionCover path={collection.path} />
-                  {/* Overlay buttons on hover */}
-                  {tracks.length > 0 && (
-                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault();
+                  {/* Overlay buttons on hover - always show */}
+                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (tracks.length > 0) {
                           playPlaylist(tracks, 0);
-                        }}
-                        className="p-3 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-full transition-all"
-                        title="Play Collection"
-                      >
-                        <Play className="w-6 h-6 text-white" fill="currentColor" />
-                      </button>
-                      <button
-                        onClick={async (e) => {
-                          e.preventDefault();
-                          // Generate collection playlist
-                          let playlistContent = '#EXTM3U\n#EXTENC:UTF-8\n\n';
-                          tracks.forEach(track => {
-                            playlistContent += `#EXTINF:-1,${track.name}\n${track.url}\n\n`;
-                          });
-                          const blob = new Blob([playlistContent], { type: 'audio/x-mpegurl' });
-                          const url = URL.createObjectURL(blob);
-                          const a = document.createElement('a');
-                          a.href = url;
-                          a.download = `${collection.name}.m3u8`;
-                          document.body.appendChild(a);
-                          a.click();
-                          document.body.removeChild(a);
-                          URL.revokeObjectURL(url);
-                        }}
-                        className="p-3 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-full transition-all"
-                        title="Download Playlist"
-                      >
-                        <List className="w-6 h-6 text-white" />
-                      </button>
-                    </div>
-                  )}
+                        }
+                      }}
+                      disabled={tracks.length === 0}
+                      className="p-3 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-full transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                      title="Play Collection"
+                    >
+                      <Play className="w-6 h-6 text-white" fill="currentColor" />
+                    </button>
+                    <button
+                      onClick={async (e) => {
+                        e.preventDefault();
+                        if (tracks.length === 0) return;
+                        // Generate collection playlist
+                        let playlistContent = '#EXTM3U\n#EXTENC:UTF-8\n\n';
+                        tracks.forEach(track => {
+                          playlistContent += `#EXTINF:-1,${track.name}\n${track.url}\n\n`;
+                        });
+                        const blob = new Blob([playlistContent], { type: 'audio/x-mpegurl' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `${collection.name}.m3u8`;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                      }}
+                      disabled={tracks.length === 0}
+                      className="p-3 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-full transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                      title="Download Playlist"
+                    >
+                      <List className="w-6 h-6 text-white" />
+                    </button>
+                  </div>
                 </div>
                 <div className="p-4">
                   <h3 className="font-medium group-hover:text-white transition-colors">
