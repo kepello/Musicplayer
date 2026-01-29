@@ -142,6 +142,14 @@ export function TrackView() {
     }
   };
   
+  const generatePlaylist = () => {
+    // Generate playlist content for single track
+    let playlistContent = '#EXTM3U\n#EXTENC:UTF-8\n\n';
+    playlistContent += `#EXTINF:-1,${trackName}\n`;
+    playlistContent += `${mp3Url}\n`;
+    return playlistContent;
+  };
+  
   const handleDownloadPlaylist = () => {
     if (playlistUrl) {
       const a = document.createElement('a');
@@ -150,6 +158,18 @@ export function TrackView() {
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
+    } else if (mp3Url) {
+      // Generate playlist on-the-fly
+      const playlistContent = generatePlaylist();
+      const blob = new Blob([playlistContent], { type: 'audio/x-mpegurl' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${trackName}.m3u8`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
     }
   };
 
@@ -208,7 +228,7 @@ export function TrackView() {
               </button>
               
               {/* Mobile: Prioritize playlist */}
-              {isMobile && playlistUrl && (
+              {isMobile && mp3Url && (
                 <button
                   onClick={handleDownloadPlaylist}
                   className="px-6 py-2 bg-zinc-800 rounded-full font-medium hover:bg-zinc-700 transition-colors flex items-center gap-2"
@@ -233,7 +253,7 @@ export function TrackView() {
               </button>
               
               {/* Desktop: Show playlist as additional option */}
-              {!isMobile && playlistUrl && (
+              {!isMobile && mp3Url && (
                 <button
                   onClick={handleDownloadPlaylist}
                   className="px-6 py-2 bg-zinc-800 rounded-full font-medium hover:bg-zinc-700 transition-colors flex items-center gap-2"

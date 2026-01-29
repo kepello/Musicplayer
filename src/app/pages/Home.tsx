@@ -89,7 +89,7 @@ export function Home() {
                   
                   {readme && (
                     <div className="flex-1 p-6">
-                      <div className="text-zinc-300 [&>p]:mb-4" style={{ columnCount: 2, columnGap: '2rem' }}>
+                      <div className="text-zinc-300 [&>p]:mb-4 columns-1 lg:columns-2 lg:gap-8">
                         <Markdown skipHtml>{readme}</Markdown>
                       </div>
                     </div>

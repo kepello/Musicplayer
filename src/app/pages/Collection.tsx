@@ -85,7 +85,7 @@ export function Collection() {
             <div className="flex-1 p-6">
               <h1 className="text-4xl font-bold mb-4">{collectionName}</h1>
               {readme && (
-                <div className="text-zinc-300 [&>p]:mb-4" style={{ columnCount: 2, columnGap: '2rem' }}>
+                <div className="text-zinc-300 [&>p]:mb-4 columns-1 lg:columns-2 lg:gap-8">
                   <Markdown skipHtml>{readme}</Markdown>
                 </div>
               )}

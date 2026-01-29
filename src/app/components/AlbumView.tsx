@@ -87,7 +87,28 @@ export function AlbumView() {
     }
   };
   
-  const handleDownloadPlaylist = () => {
+  const generatePlaylist = async () => {
+    // Generate playlist content dynamically from tracks
+    let playlistContent = '#EXTM3U\n#EXTENC:UTF-8\n\n';
+    
+    for (const track of tracks) {
+      const trackPath = `${collectionName}/${albumName}/${track.name}`;
+      const trackContents = await getRepoContents(trackPath);
+      const mp3File = trackContents.find(
+        item => item.type === 'file' && item.name.toLowerCase().endsWith('.mp3')
+      );
+      
+      if (mp3File) {
+        const mp3Url = getRawFileUrl(mp3File.path);
+        playlistContent += `#EXTINF:-1,${track.name}\n`;
+        playlistContent += `${mp3Url}\n\n`;
+      }
+    }
+    
+    return playlistContent;
+  };
+  
+  const handleDownloadPlaylist = async () => {
     if (playlistUrl) {
       const a = document.createElement('a');
       a.href = playlistUrl;
@@ -95,6 +116,18 @@ export function AlbumView() {
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
+    } else {
+      // Generate playlist on-the-fly
+      const playlistContent = await generatePlaylist();
+      const blob = new Blob([playlistContent], { type: 'audio/x-mpegurl' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${albumName}.m3u8`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
     }
   };
 
@@ -142,10 +175,10 @@ export function AlbumView() {
               )}
               
               {/* Download options based on device */}
-              {(zipUrl || playlistUrl) && (
+              {(zipUrl || playlistUrl || tracks.length > 0) && (
                 <div className="mt-6 flex flex-wrap gap-3">
                   {/* Mobile: Prioritize playlist (opens in native music app) */}
-                  {isMobile && playlistUrl && (
+                  {isMobile && tracks.length > 0 && (
                     <button
                       onClick={handleDownloadPlaylist}
                       className="px-6 py-2 bg-white text-black rounded-full font-medium hover:scale-105 transition-transform flex items-center gap-2"
@@ -168,7 +201,7 @@ export function AlbumView() {
                           Download ZIP
                         </button>
                       )}
-                      {playlistUrl && (
+                      {tracks.length > 0 && (
                         <button
                           onClick={handleDownloadPlaylist}
                           className="px-6 py-2 bg-zinc-800 text-white rounded-full font-medium hover:bg-zinc-700 transition-colors flex items-center gap-2"
