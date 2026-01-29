@@ -1,13 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router';
 import { getRepoContents, getFileContent, getRawFileUrl, GitHubContent } from '@/app/services/github';
-import { ChevronLeft, Music, Play, Download } from 'lucide-react';
+import { ChevronLeft, Music, Play, Download, List } from 'lucide-react';
 import Markdown from 'react-markdown';
 import { stripHtmlFromMarkdown } from '@/app/utils/markdown';
+import { usePlayer, Track } from '@/app/contexts/PlayerContext';
 
 export function AlbumView() {
   const { collectionName, albumName } = useParams<{ collectionName: string; albumName: string }>();
+  const { playPlaylist } = usePlayer();
   const [tracks, setTracks] = useState<GitHubContent[]>([]);
+  const [allTracks, setAllTracks] = useState<Track[]>([]);
   const [readme, setReadme] = useState<string>('');
   const [coverUrl, setCoverUrl] = useState<string | null>(null);
   const [zipUrl, setZipUrl] = useState<string | null>(null);
@@ -70,6 +73,32 @@ export function AlbumView() {
       // Get track folders (directories)
       const dirs = contents.filter(item => item.type === 'dir');
       setTracks(dirs);
+      
+      // Load mp3 URLs for all tracks
+      const tracksWithUrls = await Promise.all(
+        dirs.map(async (dir) => {
+          const trackPath = `${collectionName}/${albumName}/${dir.name}`;
+          const trackContents = await getRepoContents(trackPath);
+          const mp3 = trackContents.find(
+            item => item.type === 'file' && item.name.toLowerCase().endsWith('.mp3')
+          );
+          
+          if (mp3) {
+            return {
+              path: trackPath,
+              name: dir.name,
+              url: getRawFileUrl(mp3.path),
+              album: albumName,
+              collection: collectionName,
+            } as Track;
+          }
+          return null;
+        })
+      );
+      
+      const validTracks = tracksWithUrls.filter((t): t is Track => t !== null);
+      setAllTracks(validTracks);
+      
       setLoading(false);
     }
     
@@ -174,18 +203,29 @@ export function AlbumView() {
                 </div>
               )}
               
-              {/* Download options based on device */}
-              {(zipUrl || playlistUrl || tracks.length > 0) && (
+              {/* Play and Download options */}
+              {allTracks.length > 0 && (
                 <div className="mt-6 flex flex-wrap gap-3">
+                  <button
+                    onClick={() => playPlaylist(allTracks, 0)}
+                    className="flex items-center gap-2 px-6 py-3 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full transition-all"
+                    title="Play Album"
+                  >
+                    <Play className="w-5 h-5 text-white" fill="currentColor" />
+                    <span className="text-white font-medium">Play Album</span>
+                  </button>
+                  
+                  {(zipUrl || playlistUrl || tracks.length > 0) && (
+                    <>
                   {/* Mobile: Prioritize playlist (opens in native music app) */}
                   {isMobile && tracks.length > 0 && (
                     <button
                       onClick={handleDownloadPlaylist}
-                      className="px-6 py-2 bg-white text-black rounded-full font-medium hover:scale-105 transition-transform flex items-center gap-2"
+                      className="flex items-center gap-2 px-6 py-3 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full transition-all"
                       title={isIOS ? "Opens in Apple Music" : isAndroid ? "Opens in your music player" : "Download playlist"}
                     >
-                      <Download className="w-4 h-4" />
-                      {isIOS ? "Open in Apple Music" : isAndroid ? "Open in Music Player" : "Download Playlist"}
+                      <List className="w-5 h-5 text-white" />
+                      <span className="text-white font-medium">{isIOS ? "Apple Music" : isAndroid ? "Music Player" : "Playlist"}</span>
                     </button>
                   )}
                   
@@ -195,19 +235,21 @@ export function AlbumView() {
                       {zipUrl && (
                         <button
                           onClick={handleDownloadAlbum}
-                          className="px-6 py-2 bg-white text-black rounded-full font-medium hover:scale-105 transition-transform flex items-center gap-2"
+                          className="flex items-center gap-2 px-6 py-3 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full transition-all"
+                          title="Download ZIP"
                         >
-                          <Download className="w-4 h-4" />
-                          Download ZIP
+                          <Download className="w-5 h-5 text-white" />
+                          <span className="text-white font-medium">ZIP</span>
                         </button>
                       )}
                       {tracks.length > 0 && (
                         <button
                           onClick={handleDownloadPlaylist}
-                          className="px-6 py-2 bg-zinc-800 text-white rounded-full font-medium hover:bg-zinc-700 transition-colors flex items-center gap-2"
+                          className="flex items-center gap-2 px-6 py-3 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full transition-all"
+                          title="Download Playlist"
                         >
-                          <Music className="w-4 h-4" />
-                          Download Playlist
+                          <List className="w-5 h-5 text-white" />
+                          <span className="text-white font-medium">Playlist</span>
                         </button>
                       )}
                     </>
@@ -217,12 +259,14 @@ export function AlbumView() {
                   {isMobile && zipUrl && (
                     <button
                       onClick={handleDownloadAlbum}
-                      className="px-6 py-2 bg-zinc-800 text-white rounded-full font-medium hover:bg-zinc-700 transition-colors flex items-center gap-2"
+                      className="flex items-center gap-2 px-6 py-3 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full transition-all"
                       title="Download all files as ZIP"
                     >
-                      <Download className="w-4 h-4" />
-                      Download ZIP
+                      <Download className="w-5 h-5 text-white" />
+                      <span className="text-white font-medium">ZIP</span>
                     </button>
+                  )}
+                    </>
                   )}
                 </div>
               )}
@@ -237,23 +281,76 @@ export function AlbumView() {
           </div>
         ) : (
           <div className="space-y-2">
-            {tracks.map((track, index) => (
-              <Link
-                key={track.sha}
-                to={`/collection/${encodeURIComponent(collectionName!)}/album/${encodeURIComponent(albumName!)}/track/${encodeURIComponent(track.name)}`}
-                className="group block"
-              >
-                <div className="bg-zinc-900 rounded-lg p-4 hover:bg-zinc-800 transition-colors flex items-center gap-4">
-                  <div className="text-zinc-500 font-mono text-sm w-8">
-                    {String(index + 1).padStart(2, '0')}
+            {tracks.map((track, index) => {
+              const trackData = allTracks[index];
+              return (
+                <div key={track.sha} className="bg-zinc-900 rounded-lg p-4 hover:bg-zinc-800 transition-colors">
+                  <div className="flex items-center gap-4">
+                    <div className="text-zinc-500 font-mono text-sm w-8">
+                      {String(index + 1).padStart(2, '0')}
+                    </div>
+                    <Link
+                      to={`/collection/${encodeURIComponent(collectionName!)}/album/${encodeURIComponent(albumName!)}/track/${encodeURIComponent(track.name)}`}
+                      className="flex-1 flex items-center gap-4 group"
+                    >
+                      <Play className="w-5 h-5 text-zinc-600 group-hover:text-white transition-colors" />
+                      <h3 className="font-medium group-hover:text-white transition-colors">
+                        {track.name}
+                      </h3>
+                    </Link>
+                    {trackData && (
+                      <div className="flex gap-2">
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            playPlaylist(allTracks, index);
+                          }}
+                          className="p-2 text-zinc-400 hover:text-white transition-colors"
+                          title="Play"
+                        >
+                          <Play className="w-5 h-5" fill="currentColor" />
+                        </button>
+                        <button
+                          onClick={async (e) => {
+                            e.preventDefault();
+                            // Generate single-track playlist
+                            const playlistContent = `#EXTM3U\n#EXTENC:UTF-8\n\n#EXTINF:-1,${trackData.name}\n${trackData.url}\n`;
+                            const blob = new Blob([playlistContent], { type: 'audio/x-mpegurl' });
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = `${trackData.name}.m3u8`;
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                            URL.revokeObjectURL(url);
+                          }}
+                          className="p-2 text-zinc-400 hover:text-white transition-colors"
+                          title="Download Playlist"
+                        >
+                          <List className="w-5 h-5" />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            const a = document.createElement('a');
+                            a.href = trackData.url;
+                            a.download = `${track.name}.mp3`;
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                          }}
+                          className="p-2 text-zinc-400 hover:text-white transition-colors"
+                          title="Download MP3"
+                        >
+                          <Download className="w-5 h-5" />
+                        </button>
+                      </div>
+                    )}
                   </div>
-                  <Play className="w-5 h-5 text-zinc-600 group-hover:text-white transition-colors" />
-                  <h3 className="flex-1 font-medium group-hover:text-white transition-colors">
-                    {track.name}
-                  </h3>
                 </div>
-              </Link>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
