@@ -164,7 +164,7 @@ Represents an individual track folder.
 | `mp3`      | string | No       | Relative path to MP3 audio file              |
 | `m4a`      | string | No       | Relative path to M4A audio file              |
 | `playlist` | string | No       | Relative path to M3U8 playlist file          |
-| `lyrics`   | string | No       | Relative path to lyrics text file            |
+| `lyrics`   | string | No       | Full text content of lyrics file if exists   |
 
 ## Important Notes
 
@@ -182,75 +182,69 @@ Fields marked as "No" in the Required column can be `null` or omitted if the fil
 
 - README files (not all folders have them)
 - Cover images (not all collections/albums have them)
-- Lyrics files (most tracks don't have them)
+- Lyrics (most tracks don't have them)
 - M4A files (some tracks may only have MP3)
 - ZIP/Playlist files (only exist at album level)
 
-### 3. README Content
+### 3. README and Lyrics Content
 
-README content should be stored as the full markdown text, not as a file path. The app will:
+README and lyrics content should be stored as the full text, not as file paths. The app will:
 
-- Strip HTML comments from the markdown before display
-- Render it using a markdown parser
-- Display it in the respective views
+- Strip HTML comments from README markdown before display
+- Render README using a markdown parser
+- Display lyrics as plain text with preserved formatting (whitespace-pre-wrap)
+- Display content in the respective views
 
 ### 4. Hierarchical Structure
 
-The catalog supports two structures:
-
-**Three-level hierarchy** (Collection → Album → Track):
-
-```
-Classical/
-  └─ Beethoven-Symphony-No-9/
-      └─ 01-Allegro-ma-non-troppo/
-```
-
-**Two-level hierarchy** (Collection → Track):
-
-````
-Jazz/
-  └─ Take-Five/
-```uses a simple three-level hierarchy:
+The catalog uses a simple three-level hierarchy:
 
 **Library → Collection (Album) → Track**:
-````
-
-Library (root)
-└─ Beethoven-Symphony-No-9/ (Collection/Album)
-└─ 01-Allegro-ma-non-troppo/ (Track)
-└─ 02-Molto-vivace/ (Track)
 
 ```
+Library (root)
+  └─ Beethoven-Symphony-No-9/  (Collection/Album)
+      └─ 01-Allegro-ma-non-troppo/  (Track)
+      └─ 02-Molto-vivace/  (Track)
+```
 
-Collections ARE albums. There is no nested album structure - each collection directly contains tracks
+Collections ARE albums. There is no nested album structure - each collection directly contains tracks.
 
-**Cover images:**
-- Must start with "cover" (case-insensitive)
-- Supported formats: `.jpg`, `.jpeg`, `.png`, `.gif`, `.webp`
+### 5. File Naming Conventions
 
-### 6. Generation Timestamp
+**Collection/Album-level files:**
 
-The `generatedAt` timestamp allows the app to:
-- Display when the catalog was last updated
-- Optionally cache the catalog with an expiration policy
-- Collection/Album-level files:**
 - ZIP: `{collection-name}-m4a.zip` and `{collection-name}-mp3.zip`
 - Playlists: `{collection-name}-m4a.m3u8` and `{collection-name}-mp3.m3u8`
 
 **Track-level files:**
+
 - Audio: Any name ending in `.mp3` or `.m4a`
 - Playlist: `{track-name}.m3u8`
-- Lyrics: Any name ending in `.txt`
+- README: Any markdown file (e.g., `README.md`)
+- Lyrics: Any text file (e.g., `LYRICS.txt`)
 
 **Cover images:**
+
 - Library: `cover.jpg` at repository root (800×800 pixels)
 - Collections: `{collection-name}/cover.jpg` (800×800 pixels)
+- Must start with "cover" (case-insensitive)
+- Supported formats: `.jpg`, `.jpeg`, `.png`, `.gif`, `.webp`
+- Recommended size: 800×800 pixels (optimized for 2× pixel density)
+- Recommended formats: JPEG or WebP for best compression
+
+### 6. Generation Timestamp
+
+The `generatedAt` timestamp allows the app to:
+
+- Display when the catalog was last updated
+- Optionally cache the catalog with an expiration policy
 - All images should be 800×800 pixels for optimal display and file size
-git add catalog.json
-git commit -m "Update catalog"
-git push
-```
+  git add catalog.json
+  git commit -m "Update catalog"
+  git push
+
+````
 
 The generation script should:
 
@@ -271,7 +265,7 @@ const response = await fetch(
   "https://raw.githubusercontent.com/kepello/music/main/catalog.json",
 );
 const catalog = await response.json();
-```
+````
 
 2. Cache the catalog in memory or localStorage
 

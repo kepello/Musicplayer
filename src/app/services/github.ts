@@ -41,11 +41,11 @@ export interface GitHubContent {
 export interface CatalogTrack {
   name: string;
   path: string;
-  readme?: string;
-  mp3?: string;
-  m4a?: string;
-  playlist?: string;
-  lyrics?: string | null;
+  readme?: string;  // Full markdown content
+  mp3?: string;     // Relative path to file
+  m4a?: string;     // Relative path to file
+  playlist?: string; // Relative path to file
+  lyrics?: string | null;  // Full text content (not path)
 }
 
 // Collections are albums - they are the same thing
