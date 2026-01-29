@@ -186,12 +186,46 @@ export function AlbumView() {
         <div className="mb-8">
           <div className="bg-zinc-900 rounded-lg overflow-hidden flex flex-col lg:flex-row">
             {coverUrl && (
-              <div className="w-full lg:w-96 h-96 flex-shrink-0 bg-zinc-800">
+              <div className="group w-full lg:w-96 h-96 flex-shrink-0 bg-zinc-800 relative">
                 <img
                   src={coverUrl}
                   alt={`${albumName} cover`}
                   className="w-full h-full object-cover"
                 />
+                {/* Button overlay on album cover */}
+                {allTracks.length > 0 && (
+                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+                    <button
+                      onClick={() => playPlaylist(allTracks, 0)}
+                      className="p-3 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-full transition-all"
+                      title="Play Album"
+                    >
+                      <Play className="w-6 h-6 text-white" fill="currentColor" />
+                    </button>
+                    <button
+                      onClick={async () => {
+                        // Generate album playlist
+                        let playlistContent = '#EXTM3U\n#EXTENC:UTF-8\n\n';
+                        allTracks.forEach(track => {
+                          playlistContent += `#EXTINF:-1,${track.name}\n${track.url}\n\n`;
+                        });
+                        const blob = new Blob([playlistContent], { type: 'audio/x-mpegurl' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `${albumName}.m3u8`;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                      }}
+                      className="p-3 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-full transition-all"
+                      title="Download Playlist"
+                    >
+                      <List className="w-6 h-6 text-white" />
+                    </button>
+                  </div>
+                )}
               </div>
             )}
             <div className="flex-1 p-6">

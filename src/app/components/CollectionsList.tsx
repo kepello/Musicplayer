@@ -83,64 +83,65 @@ export function CollectionsList() {
       {collections.map((collection) => {
         const tracks = collectionTracks.get(collection.name) || [];
         return (
-          <div key={collection.sha} className="group relative">
+          <Link
+            key={collection.sha}
+            to={`/collection/${encodeURIComponent(collection.name)}`}
+            className="group block relative"
+          >
             <div className="bg-zinc-900 rounded-lg overflow-hidden hover:bg-zinc-800 transition-colors">
-              <Link
-                to={`/collection/${encodeURIComponent(collection.name)}`}
-                className="block"
-              >
-                <div className="aspect-square bg-zinc-800 flex items-center justify-center relative overflow-hidden">
-                  <CollectionCover path={collection.path} />
+              <div className="aspect-square bg-zinc-800 flex items-center justify-center relative overflow-hidden">
+                <CollectionCover path={collection.path} />
+              </div>
+              <div className="p-4 relative">
+                <h3 className="font-medium group-hover:text-white transition-colors">
+                  {collection.name}
+                </h3>
+                {/* Buttons in bottom right of text area */}
+                <div className="absolute bottom-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      if (tracks.length > 0) {
+                        playPlaylist(tracks, 0);
+                      }
+                    }}
+                    disabled={tracks.length === 0}
+                    className="p-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-full transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Play Collection"
+                  >
+                    <Play className="w-4 h-4 text-white" fill="currentColor" />
+                  </button>
+                  <button
+                    onClick={async (e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      if (tracks.length === 0) return;
+                      // Generate collection playlist
+                      let playlistContent = '#EXTM3U\n#EXTENC:UTF-8\n\n';
+                      tracks.forEach(track => {
+                        playlistContent += `#EXTINF:-1,${track.name}\n${track.url}\n\n`;
+                      });
+                      const blob = new Blob([playlistContent], { type: 'audio/x-mpegurl' });
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = `${collection.name}.m3u8`;
+                      document.body.appendChild(a);
+                      a.click();
+                      document.body.removeChild(a);
+                      URL.revokeObjectURL(url);
+                    }}
+                    disabled={tracks.length === 0}
+                    className="p-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-full transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Download Playlist"
+                  >
+                    <List className="w-4 h-4 text-white" />
+                  </button>
                 </div>
-                <div className="p-4">
-                  <h3 className="font-medium group-hover:text-white transition-colors">
-                    {collection.name}
-                  </h3>
-                </div>
-              </Link>
-              {/* Overlay buttons on hover - positioned above the Link */}
-              <div className="absolute top-0 left-0 right-0 bottom-[60px] bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3 pointer-events-none group-hover:pointer-events-auto">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (tracks.length > 0) {
-                      playPlaylist(tracks, 0);
-                    }
-                  }}
-                  disabled={tracks.length === 0}
-                  className="p-3 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-full transition-all disabled:opacity-50 disabled:cursor-not-allowed z-10"
-                  title="Play Collection"
-                >
-                  <Play className="w-6 h-6 text-white" fill="currentColor" />
-                </button>
-                <button
-                  onClick={async (e) => {
-                    e.stopPropagation();
-                    if (tracks.length === 0) return;
-                    // Generate collection playlist
-                    let playlistContent = '#EXTM3U\n#EXTENC:UTF-8\n\n';
-                    tracks.forEach(track => {
-                      playlistContent += `#EXTINF:-1,${track.name}\n${track.url}\n\n`;
-                    });
-                    const blob = new Blob([playlistContent], { type: 'audio/x-mpegurl' });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `${collection.name}.m3u8`;
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    URL.revokeObjectURL(url);
-                  }}
-                  disabled={tracks.length === 0}
-                  className="p-3 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-full transition-all disabled:opacity-50 disabled:cursor-not-allowed z-10"
-                  title="Download Playlist"
-                >
-                  <List className="w-6 h-6 text-white" />
-                </button>
               </div>
             </div>
-          </div>
+          </Link>
         );
       })}
     </div>
