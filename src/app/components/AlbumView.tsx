@@ -13,8 +13,10 @@ export function AlbumView() {
   const [allTracks, setAllTracks] = useState<Track[]>([]);
   const [readme, setReadme] = useState<string>('');
   const [coverUrl, setCoverUrl] = useState<string | null>(null);
-  const [zipUrl, setZipUrl] = useState<string | null>(null);
-  const [playlistUrl, setPlaylistUrl] = useState<string | null>(null);
+  const [zipUrlM4A, setZipUrlM4A] = useState<string | null>(null);
+  const [zipUrlMP3, setZipUrlMP3] = useState<string | null>(null);
+  const [playlistUrlM4A, setPlaylistUrlM4A] = useState<string | null>(null);
+  const [playlistUrlMP3, setPlaylistUrlMP3] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   
   // Detect device type
@@ -50,24 +52,44 @@ export function AlbumView() {
         setCoverUrl(getRawFileUrl(coverFile.path));
       }
       
-      // Find zip package
-      const zipFile = contents.find(
+      // Find M4A zip package
+      const zipFileM4A = contents.find(
         item => 
           item.type === 'file' && 
-          item.name.toLowerCase() === `${albumName.toLowerCase()}.zip`
+          item.name.toLowerCase() === `${albumName.toLowerCase()}-m4a.zip`
       );
-      if (zipFile) {
-        setZipUrl(getRawFileUrl(zipFile.path));
+      if (zipFileM4A) {
+        setZipUrlM4A(getRawFileUrl(zipFileM4A.path));
       }
       
-      // Find playlist file
-      const playlistFile = contents.find(
+      // Find MP3 zip package
+      const zipFileMP3 = contents.find(
         item => 
           item.type === 'file' && 
-          item.name.toLowerCase() === `${albumName.toLowerCase()}.m3u8`
+          item.name.toLowerCase() === `${albumName.toLowerCase()}-mp3.zip`
       );
-      if (playlistFile) {
-        setPlaylistUrl(getRawFileUrl(playlistFile.path));
+      if (zipFileMP3) {
+        setZipUrlMP3(getRawFileUrl(zipFileMP3.path));
+      }
+      
+      // Find M4A playlist file
+      const playlistFileM4A = contents.find(
+        item => 
+          item.type === 'file' && 
+          item.name.toLowerCase() === `${albumName.toLowerCase()}-m4a.m3u8`
+      );
+      if (playlistFileM4A) {
+        setPlaylistUrlM4A(getRawFileUrl(playlistFileM4A.path));
+      }
+      
+      // Find MP3 playlist file
+      const playlistFileMP3 = contents.find(
+        item => 
+          item.type === 'file' && 
+          item.name.toLowerCase() === `${albumName.toLowerCase()}-mp3.m3u8`
+      );
+      if (playlistFileMP3) {
+        setPlaylistUrlMP3(getRawFileUrl(playlistFileMP3.path));
       }
       
       // Get track folders (directories)
@@ -105,11 +127,12 @@ export function AlbumView() {
     loadAlbum();
   }, [collectionName, albumName]);
 
-  const handleDownloadAlbum = () => {
+  const handleDownloadAlbum = (format: 'M4A' | 'MP3') => {
+    const zipUrl = format === 'M4A' ? zipUrlM4A : zipUrlMP3;
     if (zipUrl) {
       const a = document.createElement('a');
       a.href = zipUrl;
-      a.download = `${albumName}.zip`;
+      a.download = `${albumName}-${format}.zip`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -138,11 +161,12 @@ export function AlbumView() {
     return playlistContent;
   };
   
-  const handleDownloadPlaylist = async () => {
+  const handleDownloadPlaylist = async (format: 'M4A' | 'MP3') => {
+    const playlistUrl = format === 'M4A' ? playlistUrlM4A : playlistUrlMP3;
     if (playlistUrl) {
       const a = document.createElement('a');
       a.href = playlistUrl;
-      a.download = `${albumName}.m3u8`;
+      a.download = `${albumName}-${format}.m3u8`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -153,7 +177,7 @@ export function AlbumView() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `${albumName}.m3u8`;
+      a.download = `${albumName}-${format}.m3u8`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -205,21 +229,26 @@ export function AlbumView() {
                     </button>
                     <button
                       onClick={async () => {
-                        // Generate album playlist
-                        let playlistContent = '#EXTM3U\n#EXTENC:UTF-8\n';
-                        allTracks.forEach(track => {
-                          playlistContent += `\n#EXTINF:-1,${track.name}\n${track.url}`;
-                        });
-                        playlistContent += '\n';
-                        const blob = new Blob([playlistContent], { type: 'audio/x-mpegurl' });
-                        const url = URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.download = `${albumName}.m3u8`;
-                        document.body.appendChild(a);
-                        a.click();
-                        document.body.removeChild(a);
-                        URL.revokeObjectURL(url);
+                        // Download playlist - prefer MP3 format
+                        if (playlistUrlMP3 || playlistUrlM4A) {
+                          await handleDownloadPlaylist(playlistUrlMP3 ? 'MP3' : 'M4A');
+                        } else {
+                          // Generate album playlist
+                          let playlistContent = '#EXTM3U\n#EXTENC:UTF-8\n';
+                          allTracks.forEach(track => {
+                            playlistContent += `\n#EXTINF:-1,${track.name}\n${track.url}`;
+                          });
+                          playlistContent += '\n';
+                          const blob = new Blob([playlistContent], { type: 'audio/x-mpegurl' });
+                          const url = URL.createObjectURL(blob);
+                          const a = document.createElement('a');
+                          a.href = url;
+                          a.download = `${albumName}-MP3.m3u8`;
+                          document.body.appendChild(a);
+                          a.click();
+                          document.body.removeChild(a);
+                          URL.revokeObjectURL(url);
+                        }
                       }}
                       className="p-3 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-full transition-all"
                       title="Download Playlist"
@@ -251,12 +280,12 @@ export function AlbumView() {
                     <span className="text-white font-medium">Play Album</span>
                   </button>
                   
-                  {(zipUrl || playlistUrl || tracks.length > 0) && (
+                  {(zipUrlM4A || zipUrlMP3 || playlistUrlM4A || playlistUrlMP3 || tracks.length > 0) && (
                     <>
                   {/* Mobile: Prioritize playlist (opens in native music app) */}
                   {isMobile && tracks.length > 0 && (
                     <button
-                      onClick={handleDownloadPlaylist}
+                      onClick={() => handleDownloadPlaylist(isIOS ? 'M4A' : 'MP3')}
                       className="flex items-center gap-2 px-6 py-3 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full transition-all"
                       title={isIOS ? "Opens in Apple Music" : isAndroid ? "Opens in your music player" : "Download playlist"}
                     >
@@ -265,36 +294,60 @@ export function AlbumView() {
                     </button>
                   )}
                   
-                  {/* Desktop: Show both options */}
+                  {/* Desktop: Show both M4A and MP3 options */}
                   {!isMobile && (
                     <>
-                      {zipUrl && (
+                      {zipUrlM4A && (
                         <button
-                          onClick={handleDownloadAlbum}
+                          onClick={() => handleDownloadAlbum('M4A')}
                           className="flex items-center gap-2 px-6 py-3 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full transition-all"
-                          title="Download ZIP"
+                          title="Download M4A ZIP"
                         >
                           <Download className="w-5 h-5 text-white" />
-                          <span className="text-white font-medium">ZIP</span>
+                          <span className="text-white font-medium">M4A ZIP</span>
+                        </button>
+                      )}
+                      {zipUrlMP3 && (
+                        <button
+                          onClick={() => handleDownloadAlbum('MP3')}
+                          className="flex items-center gap-2 px-6 py-3 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full transition-all"
+                          title="Download MP3 ZIP"
+                        >
+                          <Download className="w-5 h-5 text-white" />
+                          <span className="text-white font-medium">MP3 ZIP</span>
                         </button>
                       )}
                       {tracks.length > 0 && (
-                        <button
-                          onClick={handleDownloadPlaylist}
-                          className="flex items-center gap-2 px-6 py-3 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full transition-all"
-                          title="Download Playlist"
-                        >
-                          <List className="w-5 h-5 text-white" />
-                          <span className="text-white font-medium">Playlist</span>
-                        </button>
+                        <>
+                          {playlistUrlM4A && (
+                            <button
+                              onClick={() => handleDownloadPlaylist('M4A')}
+                              className="flex items-center gap-2 px-6 py-3 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full transition-all"
+                              title="Download M4A Playlist"
+                            >
+                              <List className="w-5 h-5 text-white" />
+                              <span className="text-white font-medium">M4A Playlist</span>
+                            </button>
+                          )}
+                          {playlistUrlMP3 && (
+                            <button
+                              onClick={() => handleDownloadPlaylist('MP3')}
+                              className="flex items-center gap-2 px-6 py-3 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full transition-all"
+                              title="Download MP3 Playlist"
+                            >
+                              <List className="w-5 h-5 text-white" />
+                              <span className="text-white font-medium">MP3 Playlist</span>
+                            </button>
+                          )}
+                        </>
                       )}
                     </>
                   )}
                   
                   {/* Mobile: Also show zip as secondary option */}
-                  {isMobile && zipUrl && (
+                  {isMobile && (zipUrlM4A || zipUrlMP3) && (
                     <button
-                      onClick={handleDownloadAlbum}
+                      onClick={() => handleDownloadAlbum(zipUrlM4A && isIOS ? 'M4A' : 'MP3')}
                       className="flex items-center gap-2 px-6 py-3 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full transition-all"
                       title="Download all files as ZIP"
                     >

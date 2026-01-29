@@ -15,6 +15,7 @@ export function TrackView() {
   const { playTrack, currentTrack, isPlaying } = usePlayer();
   const [readme, setReadme] = useState<string>('');
   const [mp3Url, setMp3Url] = useState<string>('');
+  const [m4aUrl, setM4aUrl] = useState<string>('');
   const [playlistUrl, setPlaylistUrl] = useState<string>('');
   const [lyrics, setLyrics] = useState<string>('');
   const [loading, setLoading] = useState(true);
@@ -59,9 +60,17 @@ export function TrackView() {
         setMp3Url(getRawFileUrl(mp3File.path));
       }
       
-      // Find playlist file
+      // Find M4A
+      const m4aFile = contents.find(
+        item => item.type === 'file' && item.name.toLowerCase().endsWith('.m4a')
+      );
+      if (m4aFile) {
+        setM4aUrl(getRawFileUrl(m4aFile.path));
+      }
+      
+      // Find playlist file (now contains both M4A and MP3 entries)
       const playlistFile = contents.find(
-        item => item.type === 'file' && item.name.toLowerCase().endsWith('.m3u8')
+        item => item.type === 'file' && item.name.toLowerCase() === `${trackName.toLowerCase()}.m3u8`
       );
       if (playlistFile) {
         setPlaylistUrl(getRawFileUrl(playlistFile.path));
@@ -143,10 +152,16 @@ export function TrackView() {
   };
   
   const generatePlaylist = () => {
-    // Generate playlist content for single track
+    // Generate playlist content for single track with both formats
     let playlistContent = '#EXTM3U\n#EXTENC:UTF-8\n\n';
-    playlistContent += `#EXTINF:-1,${trackName}\n`;
-    playlistContent += `${mp3Url}\n`;
+    if (m4aUrl) {
+      playlistContent += `#EXTINF:-1,${trackName} (M4A)\n`;
+      playlistContent += `${m4aUrl}\n\n`;
+    }
+    if (mp3Url) {
+      playlistContent += `#EXTINF:-1,${trackName} (MP3)\n`;
+      playlistContent += `${mp3Url}\n`;
+    }
     return playlistContent;
   };
   
@@ -217,7 +232,7 @@ export function TrackView() {
             )}
           </div>
           
-          {mp3Url && (
+          {(mp3Url || m4aUrl) && (
             <div className="flex flex-wrap gap-3 mb-8">
               <button
                 onClick={handlePlay}
@@ -228,7 +243,7 @@ export function TrackView() {
               </button>
               
               {/* Mobile: Prioritize playlist */}
-              {isMobile && mp3Url && (
+              {isMobile && (mp3Url || m4aUrl) && (
                 <button
                   onClick={handleDownloadPlaylist}
                   className="px-6 py-2 bg-zinc-800 rounded-full font-medium hover:bg-zinc-700 transition-colors flex items-center gap-2"
@@ -239,28 +254,50 @@ export function TrackView() {
                 </button>
               )}
               
-              {/* Always show MP3 download */}
-              <button
-                onClick={handleDownload}
-                className={`px-6 py-2 rounded-full font-medium transition-colors flex items-center gap-2 ${
-                  isMobile && playlistUrl 
-                    ? 'bg-zinc-800 hover:bg-zinc-700' 
-                    : 'bg-zinc-800 hover:bg-zinc-700'
-                }`}
-              >
-                <Download className="w-4 h-4" />
-                Download MP3
-              </button>
-              
-              {/* Desktop: Show playlist as additional option */}
-              {!isMobile && mp3Url && (
+              {/* Always show MP3 download if available */}
+              {mp3Url && (
                 <button
-                  onClick={handleDownloadPlaylist}
-                  className="px-6 py-2 bg-zinc-800 rounded-full font-medium hover:bg-zinc-700 transition-colors flex items-center gap-2"
+                  onClick={handleDownload}
+                  className={`px-6 py-2 rounded-full font-medium transition-colors flex items-center gap-2 ${
+                    isMobile && playlistUrl 
+                      ? 'bg-zinc-800 hover:bg-zinc-700' 
+                      : 'bg-zinc-800 hover:bg-zinc-700'
+                  }`}
                 >
-                  <Music className="w-4 h-4" />
-                  Download Playlist
+                  <Download className="w-4 h-4" />
+                  Download MP3
                 </button>
+              )}
+              
+              {/* Desktop: Show M4A and playlist options */}
+              {!isMobile && (
+                <>
+                  {m4aUrl && (
+                    <button
+                      onClick={() => {
+                        const a = document.createElement('a');
+                        a.href = m4aUrl;
+                        a.download = `${trackName}.m4a`;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                      }}
+                      className="px-6 py-2 bg-zinc-800 rounded-full font-medium hover:bg-zinc-700 transition-colors flex items-center gap-2"
+                    >
+                      <Download className="w-4 h-4" />
+                      Download M4A
+                    </button>
+                  )}
+                  {(mp3Url || m4aUrl) && (
+                    <button
+                      onClick={handleDownloadPlaylist}
+                      className="px-6 py-2 bg-zinc-800 rounded-full font-medium hover:bg-zinc-700 transition-colors flex items-center gap-2"
+                    >
+                      <Music className="w-4 h-4" />
+                      Download Playlist
+                    </button>
+                  )}
+                </>
               )}
             </div>
           )}
@@ -273,7 +310,7 @@ export function TrackView() {
           </div>
         )}
 
-        {!mp3Url && (
+        {!mp3Url && !m4aUrl && (
           <div className="flex flex-col items-center justify-center py-20">
             <Music className="w-16 h-16 text-zinc-600 mb-4" />
             <div className="text-zinc-400">No audio file found</div>
