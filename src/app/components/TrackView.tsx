@@ -236,21 +236,20 @@ export function TrackView() {
             <div className="flex flex-wrap gap-3 mb-8">
               <button
                 onClick={handlePlay}
-                className="px-6 py-2 bg-white text-black rounded-full font-medium hover:scale-105 transition-transform flex items-center gap-2"
+                className="p-3 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full transition-all"
+                title={isCurrentTrack && isPlaying ? 'Playing' : 'Play Track'}
               >
-                <Play className="w-4 h-4" fill="currentColor" />
-                {isCurrentTrack && isPlaying ? 'Playing' : 'Play'}
+                <Play className="w-5 h-5 text-white" fill="currentColor" />
               </button>
               
               {/* Mobile: Prioritize playlist */}
               {isMobile && (mp3Url || m4aUrl) && (
                 <button
                   onClick={handleDownloadPlaylist}
-                  className="px-6 py-2 bg-zinc-800 rounded-full font-medium hover:bg-zinc-700 transition-colors flex items-center gap-2"
+                  className="p-3 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full transition-all"
                   title={isIOS ? "Opens in Apple Music" : isAndroid ? "Opens in your music player" : "Download playlist"}
                 >
-                  <Music className="w-4 h-4" />
-                  {isIOS ? "Add to Apple Music" : isAndroid ? "Add to Music" : "Download Playlist"}
+                  <List className="w-5 h-5 text-white" />
                 </button>
               )}
               
@@ -258,14 +257,10 @@ export function TrackView() {
               {mp3Url && (
                 <button
                   onClick={handleDownload}
-                  className={`px-6 py-2 rounded-full font-medium transition-colors flex items-center gap-2 ${
-                    isMobile && playlistUrl 
-                      ? 'bg-zinc-800 hover:bg-zinc-700' 
-                      : 'bg-zinc-800 hover:bg-zinc-700'
-                  }`}
+                  className="p-3 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full transition-all"
+                  title="Download MP3"
                 >
-                  <Download className="w-4 h-4" />
-                  Download MP3
+                  <Download className="w-5 h-5 text-white" />
                 </button>
               )}
               
@@ -282,19 +277,19 @@ export function TrackView() {
                         a.click();
                         document.body.removeChild(a);
                       }}
-                      className="px-6 py-2 bg-zinc-800 rounded-full font-medium hover:bg-zinc-700 transition-colors flex items-center gap-2"
+                      className="p-3 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full transition-all"
+                      title="Download M4A"
                     >
-                      <Download className="w-4 h-4" />
-                      Download M4A
+                      <Download className="w-5 h-5 text-white" />
                     </button>
                   )}
                   {(mp3Url || m4aUrl) && (
                     <button
                       onClick={handleDownloadPlaylist}
-                      className="px-6 py-2 bg-zinc-800 rounded-full font-medium hover:bg-zinc-700 transition-colors flex items-center gap-2"
+                      className="p-3 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full transition-all"
+                      title="Download Playlist"
                     >
-                      <Music className="w-4 h-4" />
-                      Download Playlist
+                      <List className="w-5 h-5 text-white" />
                     </button>
                   )}
                 </>

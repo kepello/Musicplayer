@@ -273,11 +273,10 @@ export function AlbumView() {
                 <div className="mt-6 flex flex-wrap gap-3">
                   <button
                     onClick={() => playPlaylist(allTracks, 0)}
-                    className="flex items-center gap-2 px-6 py-3 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full transition-all"
+                    className="p-3 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full transition-all"
                     title="Play Album"
                   >
                     <Play className="w-5 h-5 text-white" fill="currentColor" />
-                    <span className="text-white font-medium">Play Album</span>
                   </button>
                   
                   {(zipUrlM4A || zipUrlMP3 || playlistUrlM4A || playlistUrlMP3 || tracks.length > 0) && (
@@ -286,11 +285,10 @@ export function AlbumView() {
                   {isMobile && tracks.length > 0 && (
                     <button
                       onClick={() => handleDownloadPlaylist(isIOS ? 'M4A' : 'MP3')}
-                      className="flex items-center gap-2 px-6 py-3 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full transition-all"
+                      className="p-3 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full transition-all"
                       title={isIOS ? "Opens in Apple Music" : isAndroid ? "Opens in your music player" : "Download playlist"}
                     >
                       <List className="w-5 h-5 text-white" />
-                      <span className="text-white font-medium">{isIOS ? "Apple Music" : isAndroid ? "Music Player" : "Playlist"}</span>
                     </button>
                   )}
                   
@@ -300,21 +298,19 @@ export function AlbumView() {
                       {zipUrlM4A && (
                         <button
                           onClick={() => handleDownloadAlbum('M4A')}
-                          className="flex items-center gap-2 px-6 py-3 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full transition-all"
+                          className="p-3 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full transition-all"
                           title="Download M4A ZIP"
                         >
                           <Download className="w-5 h-5 text-white" />
-                          <span className="text-white font-medium">M4A ZIP</span>
                         </button>
                       )}
                       {zipUrlMP3 && (
                         <button
                           onClick={() => handleDownloadAlbum('MP3')}
-                          className="flex items-center gap-2 px-6 py-3 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full transition-all"
+                          className="p-3 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full transition-all"
                           title="Download MP3 ZIP"
                         >
                           <Download className="w-5 h-5 text-white" />
-                          <span className="text-white font-medium">MP3 ZIP</span>
                         </button>
                       )}
                       {tracks.length > 0 && (
@@ -322,21 +318,19 @@ export function AlbumView() {
                           {playlistUrlM4A && (
                             <button
                               onClick={() => handleDownloadPlaylist('M4A')}
-                              className="flex items-center gap-2 px-6 py-3 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full transition-all"
+                              className="p-3 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full transition-all"
                               title="Download M4A Playlist"
                             >
                               <List className="w-5 h-5 text-white" />
-                              <span className="text-white font-medium">M4A Playlist</span>
                             </button>
                           )}
                           {playlistUrlMP3 && (
                             <button
                               onClick={() => handleDownloadPlaylist('MP3')}
-                              className="flex items-center gap-2 px-6 py-3 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full transition-all"
+                              className="p-3 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full transition-all"
                               title="Download MP3 Playlist"
                             >
                               <List className="w-5 h-5 text-white" />
-                              <span className="text-white font-medium">MP3 Playlist</span>
                             </button>
                           )}
                         </>
@@ -348,11 +342,10 @@ export function AlbumView() {
                   {isMobile && (zipUrlM4A || zipUrlMP3) && (
                     <button
                       onClick={() => handleDownloadAlbum(zipUrlM4A && isIOS ? 'M4A' : 'MP3')}
-                      className="flex items-center gap-2 px-6 py-3 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full transition-all"
+                      className="p-3 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full transition-all"
                       title="Download all files as ZIP"
                     >
                       <Download className="w-5 h-5 text-white" />
-                      <span className="text-white font-medium">ZIP</span>
                     </button>
                   )}
                     </>
