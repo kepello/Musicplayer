@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router';
 import { getCatalog, getRawFileUrl, CatalogCollection, CatalogTrack } from '@/app/services/github';
-import { ChevronLeft, Music, Play, Download, List } from 'lucide-react';
+import { ChevronLeft, Music, Play, Download, List, Archive } from 'lucide-react';
 import Markdown from 'react-markdown';
 import { stripHtmlFromMarkdown } from '@/app/utils/markdown';
 import { usePlayer, Track } from '@/app/contexts/PlayerContext';
@@ -105,16 +105,28 @@ export function Collection() {
                   <button
                     onClick={async () => {
                       if (allTracks.length === 0) return;
-                      // Download album playlist
-                      if (collection?.playlistMp3) {
+                      
+                      // Detect device for format preference
+                      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+                      const preferM4A = isMobile || /Mac/i.test(navigator.userAgent);
+                      
+                      // Download standalone streaming playlist
+                      if (preferM4A && collection?.playlistM4A) {
                         const a = document.createElement('a');
-                        a.href = getRawFileUrl(collection.playlistMp3);
-                        a.download = `${collectionName}.m3u8`;
+                        a.href = getRawFileUrl(collection.playlistM4A);
+                        a.download = `${collectionName}-M4A.m3u8`;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                      } else if (collection?.playlistMP3) {
+                        const a = document.createElement('a');
+                        a.href = getRawFileUrl(collection.playlistMP3);
+                        a.download = `${collectionName}-MP3.m3u8`;
                         document.body.appendChild(a);
                         a.click();
                         document.body.removeChild(a);
                       } else {
-                        // Generate playlist on-the-fly
+                        // Fallback: Generate playlist on-the-fly
                         let playlistContent = '#EXTM3U\n#EXTENC:UTF-8\n';
                         allTracks.forEach(track => {
                           playlistContent += `\n#EXTINF:-1,${track.name}\n${track.url}`;
@@ -133,9 +145,38 @@ export function Collection() {
                     }}
                     disabled={allTracks.length === 0}
                     className="p-3 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                    title="Download Playlist"
+                    title="Download streaming playlist"
                   >
-                    <Download className="w-5 h-5 text-white" />
+                    <List className="w-5 h-5 text-white" />
+                  </button>
+                  <button
+                    onClick={async () => {
+                      // Detect device for format preference
+                      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+                      const preferM4A = isMobile || /Mac/i.test(navigator.userAgent);
+                      
+                      // Download ZIP file
+                      if (preferM4A && collection?.zipM4A) {
+                        const a = document.createElement('a');
+                        a.href = getRawFileUrl(collection.zipM4A);
+                        a.download = `${collectionName}-M4A.zip`;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                      } else if (collection?.zipMP3) {
+                        const a = document.createElement('a');
+                        a.href = getRawFileUrl(collection.zipMP3);
+                        a.download = `${collectionName}-MP3.zip`;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                      }
+                    }}
+                    disabled={!collection?.zipM4A && !collection?.zipMP3}
+                    className="p-3 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Download complete album archive"
+                  >
+                    <Archive className="w-5 h-5 text-white" />
                   </button>
                 </div>
               </div>
@@ -156,8 +197,8 @@ export function Collection() {
         ) : (
           <div className="space-y-2">
             {allTracks.map((trackData, index) => {
-              // Detect device type for download format
-              const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+              // Get full catalog track data
+              const catalogTrack = collection?.tracks.find(t => t.name === trackData.name);
               
               return (
                 <div key={trackData.path} className="bg-zinc-900 rounded-lg p-4 hover:bg-zinc-800 transition-colors">
@@ -185,16 +226,37 @@ export function Collection() {
                       <button
                         onClick={async (e) => {
                           e.preventDefault();
-                          // Download MP3 or M4A based on device
-                          const a = document.createElement('a');
-                          a.href = trackData.url;
-                          a.download = `${trackData.name}.mp3`;
-                          document.body.appendChild(a);
-                          a.click();
-                          document.body.removeChild(a);
+                          // Download track playlist if available, otherwise generate it
+                          if (catalogTrack?.playlist) {
+                            const a = document.createElement('a');
+                            a.href = getRawFileUrl(catalogTrack.playlist);
+                            a.download = `${trackData.name}.m3u8`;
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                          } else if (catalogTrack?.mp3 || catalogTrack?.m4a) {
+                            // Generate track playlist on-the-fly
+                            let playlistContent = '#EXTM3U\n#EXTENC:UTF-8\n';
+                            if (catalogTrack.m4a) {
+                              playlistContent += `\n#EXTINF:-1,${trackData.name} (M4A)\n${getRawFileUrl(catalogTrack.m4a)}`;
+                            }
+                            if (catalogTrack.mp3) {
+                              playlistContent += `\n#EXTINF:-1,${trackData.name} (MP3)\n${getRawFileUrl(catalogTrack.mp3)}`;
+                            }
+                            playlistContent += '\n';
+                            const blob = new Blob([playlistContent], { type: 'audio/x-mpegurl' });
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = `${trackData.name}.m3u8`;
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                            URL.revokeObjectURL(url);
+                          }
                         }}
                         className="p-2 text-zinc-400 hover:text-white transition-colors"
-                        title={isMobile ? "Download audio file" : "Download MP3"}
+                        title="Download track playlist"
                       >
                         <Download className="w-5 h-5" />
                       </button>

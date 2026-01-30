@@ -88,21 +88,33 @@ export function TrackView() {
   };
 
   const handleDownload = () => {
-    // Download M4A if available and on mobile, otherwise MP3
-    if (isMobile && track?.m4a) {
+    // Download track playlist if available, otherwise generate it
+    if (track?.playlist) {
       const a = document.createElement('a');
-      a.href = getRawFileUrl(track.m4a);
-      a.download = `${trackName}.m4a`;
+      a.href = getRawFileUrl(track.playlist);
+      a.download = `${trackName}.m3u8`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-    } else if (track?.mp3) {
+    } else if (track?.mp3 || track?.m4a) {
+      // Generate track playlist on-the-fly with both formats
+      let playlistContent = '#EXTM3U\n#EXTENC:UTF-8\n';
+      if (track.m4a) {
+        playlistContent += `\n#EXTINF:-1,${trackName} (M4A)\n${getRawFileUrl(track.m4a)}`;
+      }
+      if (track.mp3) {
+        playlistContent += `\n#EXTINF:-1,${trackName} (MP3)\n${getRawFileUrl(track.mp3)}`;
+      }
+      playlistContent += '\n';
+      const blob = new Blob([playlistContent], { type: 'audio/x-mpegurl' });
+      const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = getRawFileUrl(track.mp3);
-      a.download = `${trackName}.mp3`;
+      a.href = url;
+      a.download = `${trackName}.m3u8`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
+      URL.revokeObjectURL(url);
     }
   };
   
@@ -196,7 +208,7 @@ export function TrackView() {
               <button
                 onClick={handleDownload}
                 className="p-3 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full transition-all"
-                title={isMobile && track?.m4a ? "Download M4A" : "Download MP3"}
+                title="Download track playlist"
               >
                 <Download className="w-5 h-5 text-white" />
               </button>

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router';
 import { getCatalog, getRawFileUrl, CatalogCollection } from '@/app/services/github';
-import { Folder, Music, Play, Download, List } from 'lucide-react';
+import { Folder, Music, Play, Download, List, Archive } from 'lucide-react';
 import { usePlayer, Track } from '@/app/contexts/PlayerContext';
 
 export function CollectionsList() {
@@ -109,27 +109,81 @@ export function CollectionsList() {
                       e.preventDefault();
                       e.stopPropagation();
                       if (tracks.length === 0) return;
-                      // Generate collection playlist
-                      let playlistContent = '#EXTM3U\n#EXTENC:UTF-8\n';
-                      tracks.forEach(track => {
-                        playlistContent += `\n#EXTINF:-1,${track.name}\n${track.url}`;
-                      });
-                      playlistContent += '\n';
-                      const blob = new Blob([playlistContent], { type: 'audio/x-mpegurl' });
-                      const url = URL.createObjectURL(blob);
-                      const a = document.createElement('a');
-                      a.href = url;
-                      a.download = `${collection.name}.m3u8`;
-                      document.body.appendChild(a);
-                      a.click();
-                      document.body.removeChild(a);
-                      URL.revokeObjectURL(url);
+                      
+                      // Detect device for format preference
+                      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+                      const preferM4A = isMobile || /Mac/i.test(navigator.userAgent);
+                      
+                      // Download standalone streaming playlist
+                      if (preferM4A && collection.playlistM4A) {
+                        const a = document.createElement('a');
+                        a.href = getRawFileUrl(collection.playlistM4A);
+                        a.download = `${collection.name}-M4A.m3u8`;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                      } else if (collection.playlistMP3) {
+                        const a = document.createElement('a');
+                        a.href = getRawFileUrl(collection.playlistMP3);
+                        a.download = `${collection.name}-MP3.m3u8`;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                      } else {
+                        // Fallback: Generate playlist on-the-fly
+                        let playlistContent = '#EXTM3U\n#EXTENC:UTF-8\n';
+                        tracks.forEach(track => {
+                          playlistContent += `\n#EXTINF:-1,${track.name}\n${track.url}`;
+                        });
+                        playlistContent += '\n';
+                        const blob = new Blob([playlistContent], { type: 'audio/x-mpegurl' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `${collection.name}.m3u8`;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                      }
                     }}
                     disabled={tracks.length === 0}
                     className="p-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-full transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                    title="Download Playlist"
+                    title="Download streaming playlist"
                   >
                     <List className="w-4 h-4 text-white" />
+                  </button>
+                  <button
+                    onClick={async (e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      
+                      // Detect device for format preference
+                      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+                      const preferM4A = isMobile || /Mac/i.test(navigator.userAgent);
+                      
+                      // Download ZIP file
+                      if (preferM4A && collection.zipM4A) {
+                        const a = document.createElement('a');
+                        a.href = getRawFileUrl(collection.zipM4A);
+                        a.download = `${collection.name}-M4A.zip`;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                      } else if (collection.zipMP3) {
+                        const a = document.createElement('a');
+                        a.href = getRawFileUrl(collection.zipMP3);
+                        a.download = `${collection.name}-MP3.zip`;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                      }
+                    }}
+                    disabled={!collection.zipM4A && !collection.zipMP3}
+                    className="p-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-full transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Download complete album archive"
+                  >
+                    <Archive className="w-4 h-4 text-white" />
                   </button>
                 </div>
               </div>
