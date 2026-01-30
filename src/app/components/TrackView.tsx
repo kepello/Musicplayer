@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router';
-import { getCatalog, getFileContent, getRawFileUrl, CatalogTrack } from '@/app/services/github';
+import { getCatalog, getRawFileUrl, CatalogTrack } from '@/app/services/github';
 import { usePlayer, Track } from '@/app/contexts/PlayerContext';
-import { ChevronLeft, Play, Download, Music, List } from 'lucide-react';
+import { ChevronLeft, Play, Download, Music } from 'lucide-react';
 import Markdown from 'react-markdown';
 import { stripHtmlFromMarkdown } from '@/app/utils/markdown';
 
@@ -73,30 +73,30 @@ export function TrackView() {
       const mp3Url = getRawFileUrl(track.mp3);
       const trackPath = track.path;
       
-      // Load lyrics if available
-      let lyricsContent = '';
-      if (track.lyrics) {
-        // We'll need to fetch lyrics content
-        getFileContent(track.lyrics).then(content => {
-          lyricsContent = content;
-        });
-      }
-      
       playTrack(
         {
           path: trackPath,
           name: trackName!,
           url: mp3Url,
           collection: collectionName,
-          lyrics: lyricsContent,
+          lyrics: track.lyrics,
         },
-        allTracks // Pass all tracks as playlist context
+        undefined, // No playlist context - play only this track
+        true // Stop after this track finishes
       );
     }
   };
 
   const handleDownload = () => {
-    if (track?.mp3) {
+    // Download M4A if available and on mobile, otherwise MP3
+    if (isMobile && track?.m4a) {
+      const a = document.createElement('a');
+      a.href = getRawFileUrl(track.m4a);
+      a.download = `${trackName}.m4a`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } else if (track?.mp3) {
       const a = document.createElement('a');
       a.href = getRawFileUrl(track.mp3);
       a.download = `${trackName}.mp3`;
@@ -193,58 +193,13 @@ export function TrackView() {
                 <Play className="w-5 h-5 text-white" fill="currentColor" />
               </button>
               
-              {/* Mobile: Prioritize playlist */}
-              {isMobile && (track?.mp3 || track?.m4a) && (
-                <button
-                  onClick={handleDownloadPlaylist}
-                  className="p-3 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full transition-all"
-                  title={isIOS ? "Opens in Apple Music" : isAndroid ? "Opens in your music player" : "Download playlist"}
-                >
-                  <List className="w-5 h-5 text-white" />
-                </button>
-              )}
-              
-              {/* Always show MP3 download if available */}
-              {track?.mp3 && (
-                <button
-                  onClick={handleDownload}
-                  className="p-3 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full transition-all"
-                  title="Download MP3"
-                >
-                  <Download className="w-5 h-5 text-white" />
-                </button>
-              )}
-              
-              {/* Desktop: Show M4A and playlist options */}
-              {!isMobile && (
-                <>
-                  {track?.m4a && (
-                    <button
-                      onClick={() => {
-                        const a = document.createElement('a');
-                        a.href = getRawFileUrl(track.m4a!);
-                        a.download = `${trackName}.m4a`;
-                        document.body.appendChild(a);
-                        a.click();
-                        document.body.removeChild(a);
-                      }}
-                      className="p-3 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full transition-all"
-                      title="Download M4A"
-                    >
-                      <Download className="w-5 h-5 text-white" />
-                    </button>
-                  )}
-                  {(track?.mp3 || track?.m4a) && (
-                    <button
-                      onClick={handleDownloadPlaylist}
-                      className="p-3 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full transition-all"
-                      title="Download Playlist"
-                    >
-                      <List className="w-5 h-5 text-white" />
-                    </button>
-                  )}
-                </>
-              )}
+              <button
+                onClick={handleDownload}
+                className="p-3 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full transition-all"
+                title={isMobile && track?.m4a ? "Download M4A" : "Download MP3"}
+              >
+                <Download className="w-5 h-5 text-white" />
+              </button>
             </div>
           )}
         </div>

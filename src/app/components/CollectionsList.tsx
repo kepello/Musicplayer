@@ -95,7 +95,7 @@ export function CollectionsList() {
                       e.preventDefault();
                       e.stopPropagation();
                       if (tracks.length > 0) {
-                        playPlaylist(tracks, 0);
+                        playPlaylist(tracks, 0, true); // Stop after album finishes
                       }
                     }}
                     disabled={tracks.length === 0}

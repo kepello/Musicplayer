@@ -14,8 +14,8 @@ interface PlayerContextType {
   isPlaying: boolean;
   playlist: Track[];
   currentIndex: number;
-  playTrack: (track: Track, playlist?: Track[]) => void;
-  playPlaylist: (tracks: Track[], startIndex?: number) => void;
+  playTrack: (track: Track, playlist?: Track[], stopAtEnd?: boolean) => void;
+  playPlaylist: (tracks: Track[], startIndex?: number, stopAtEnd?: boolean) => void;
   togglePlayPause: () => void;
   playNext: () => void;
   playPrevious: () => void;
@@ -30,9 +30,10 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   const [playlist, setPlaylist] = useState<Track[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [playHistory, setPlayHistory] = useState<Track[]>([]);
+  const [stopAtEnd, setStopAtEnd] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
 
-  const playTrack = (track: Track, contextPlaylist?: Track[]) => {
+  const playTrack = (track: Track, contextPlaylist?: Track[], shouldStopAtEnd: boolean = false) => {
     // If a playlist context is provided, use it; otherwise create a single-track playlist
     const newPlaylist = contextPlaylist || [track];
     const trackIndex = newPlaylist.findIndex(t => t.path === track.path);
@@ -42,6 +43,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     setCurrentIndex(index);
     setCurrentTrack(track);
     setIsPlaying(true);
+    setStopAtEnd(shouldStopAtEnd);
     
     // Add to history if it's a different track
     if (!playHistory.length || playHistory[playHistory.length - 1]?.path !== track.path) {
@@ -49,7 +51,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const playPlaylist = (tracks: Track[], startIndex: number = 0) => {
+  const playPlaylist = (tracks: Track[], startIndex: number = 0, shouldStopAtEnd: boolean = false) => {
     if (tracks.length === 0) return;
     
     const index = Math.min(startIndex, tracks.length - 1);
@@ -57,6 +59,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     setCurrentIndex(index);
     setCurrentTrack(tracks[index]);
     setIsPlaying(true);
+    setStopAtEnd(shouldStopAtEnd);
     
     // Add to history
     if (!playHistory.length || playHistory[playHistory.length - 1]?.path !== tracks[index].path) {
@@ -89,6 +92,10 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       if (!playHistory.length || playHistory[playHistory.length - 1]?.path !== playlist[nextIndex].path) {
         setPlayHistory(prev => [...prev, playlist[nextIndex]]);
       }
+    }
+    // If stopAtEnd is true and we've reached the end, stop playing
+    else if (stopAtEnd) {
+      setIsPlaying(false);
     }
     // Otherwise loop back to the beginning
     else {
