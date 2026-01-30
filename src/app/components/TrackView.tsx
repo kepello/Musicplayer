@@ -219,7 +219,7 @@ export function TrackView() {
         {track?.lyrics && (
           <div className="bg-zinc-900 rounded-lg p-6">
             <h2 className="text-xl font-bold mb-4">Lyrics</h2>
-            <div className="text-zinc-300 whitespace-pre-wrap">{track.lyrics}</div>
+            <div className="text-zinc-300 whitespace-pre-wrap columns-1 lg:columns-2 lg:gap-8">{track.lyrics}</div>
           </div>
         )}
 
