@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router';
 import { getCatalog, getRawFileUrl, CatalogAlbum } from '@/app/services/github';
-import { ChevronLeft, Music, Play, Download, List } from 'lucide-react';
+import { ChevronLeft, Music, Play, Download, List, Shuffle } from 'lucide-react';
 import Markdown from 'react-markdown';
 import { stripHtmlFromMarkdown } from '@/app/utils/markdown';
 import { usePlayer, Track } from '@/app/contexts/PlayerContext';
@@ -150,6 +150,13 @@ export function AlbumView() {
                       <Play className="w-6 h-6 text-white" fill="currentColor" />
                     </button>
                     <button
+                      onClick={() => playPlaylist(allTracks, 0, false, true)}
+                      className="p-3 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-full transition-all"
+                      title="Shuffle Album"
+                    >
+                      <Shuffle className="w-6 h-6 text-white" />
+                    </button>
+                    <button
                       onClick={async () => {
                         // Download playlist - prefer MP3 format
                         if (album?.playlistMP3 || album?.playlistM4A) {
@@ -199,6 +206,13 @@ export function AlbumView() {
                     title="Play Album"
                   >
                     <Play className="w-5 h-5 text-white" fill="currentColor" />
+                  </button>
+                  <button
+                    onClick={() => playPlaylist(allTracks, 0, false, true)}
+                    className="p-3 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full transition-all"
+                    title="Shuffle Album"
+                  >
+                    <Shuffle className="w-5 h-5 text-white" />
                   </button>
                   
                   {(album?.zipM4A || album?.zipMP3 || album?.playlistM4A || album?.playlistMP3 || allTracks.length > 0) && (

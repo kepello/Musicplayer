@@ -14,9 +14,11 @@ interface PlayerContextType {
   isPlaying: boolean;
   playlist: Track[];
   currentIndex: number;
+  isShuffle: boolean;
   playTrack: (track: Track, playlist?: Track[], stopAtEnd?: boolean) => void;
-  playPlaylist: (tracks: Track[], startIndex?: number, stopAtEnd?: boolean) => void;
+  playPlaylist: (tracks: Track[], startIndex?: number, stopAtEnd?: boolean, shuffle?: boolean) => void;
   togglePlayPause: () => void;
+  toggleShuffle: () => void;
   playNext: () => void;
   playPrevious: () => void;
   audioRef: React.RefObject<HTMLAudioElement>;
@@ -28,10 +30,22 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [playlist, setPlaylist] = useState<Track[]>([]);
+  const [originalPlaylist, setOriginalPlaylist] = useState<Track[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [playHistory, setPlayHistory] = useState<Track[]>([]);
   const [stopAtEnd, setStopAtEnd] = useState(false);
+  const [isShuffle, setIsShuffle] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
+
+  // Utility function to shuffle array
+  const shuffleArray = <T,>(array: T[]): T[] => {
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+  };
 
   const playTrack = (track: Track, contextPlaylist?: Track[], shouldStopAtEnd: boolean = false) => {
     // If a playlist context is provided, use it; otherwise create a single-track playlist
@@ -39,11 +53,13 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     const trackIndex = newPlaylist.findIndex(t => t.path === track.path);
     const index = trackIndex >= 0 ? trackIndex : 0;
     
+    setOriginalPlaylist(newPlaylist);
     setPlaylist(newPlaylist);
     setCurrentIndex(index);
     setCurrentTrack(track);
     setIsPlaying(true);
     setStopAtEnd(shouldStopAtEnd);
+    setIsShuffle(false); // Reset shuffle when playing a specific track
     
     // Add to history if it's a different track
     if (!playHistory.length || playHistory[playHistory.length - 1]?.path !== track.path) {
@@ -51,19 +67,65 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const playPlaylist = (tracks: Track[], startIndex: number = 0, shouldStopAtEnd: boolean = false) => {
+  const playPlaylist = (tracks: Track[], startIndex: number = 0, shouldStopAtEnd: boolean = false, shuffle: boolean = false) => {
     if (tracks.length === 0) return;
     
-    const index = Math.min(startIndex, tracks.length - 1);
-    setPlaylist(tracks);
-    setCurrentIndex(index);
-    setCurrentTrack(tracks[index]);
+    setOriginalPlaylist(tracks);
+    
+    let playlistToUse = tracks;
+    let actualStartIndex = startIndex;
+    
+    if (shuffle) {
+      setIsShuffle(true);
+      // Shuffle but ensure the current track (if specified) starts first
+      const startTrack = tracks[startIndex];
+      const otherTracks = tracks.filter((_, idx) => idx !== startIndex);
+      const shuffledOthers = shuffleArray(otherTracks);
+      playlistToUse = [startTrack, ...shuffledOthers];
+      actualStartIndex = 0;
+    } else {
+      setIsShuffle(false);
+      actualStartIndex = Math.min(startIndex, tracks.length - 1);
+    }
+    
+    setPlaylist(playlistToUse);
+    setCurrentIndex(actualStartIndex);
+    setCurrentTrack(playlistToUse[actualStartIndex]);
     setIsPlaying(true);
     setStopAtEnd(shouldStopAtEnd);
     
     // Add to history
-    if (!playHistory.length || playHistory[playHistory.length - 1]?.path !== tracks[index].path) {
-      setPlayHistory(prev => [...prev, tracks[index]]);
+    if (!playHistory.length || playHistory[playHistory.length - 1]?.path !== playlistToUse[actualStartIndex].path) {
+      setPlayHistory(prev => [...prev, playlistToUse[actualStartIndex]]);
+    }
+  };
+
+  const toggleShuffle = () => {
+    if (!currentTrack || playlist.length === 0) return;
+    
+    const newShuffleState = !isShuffle;
+    setIsShuffle(newShuffleState);
+    
+    if (newShuffleState) {
+      // Shuffle: keep current track first, shuffle the rest
+      const currentTrackInPlaylist = playlist[currentIndex];
+      const remainingTracks = playlist.slice(currentIndex + 1);
+      const previousTracks = playlist.slice(0, currentIndex);
+      const allOtherTracks = [...remainingTracks, ...previousTracks];
+      const shuffledOthers = shuffleArray(allOtherTracks);
+      const newPlaylist = [currentTrackInPlaylist, ...shuffledOthers];
+      
+      setPlaylist(newPlaylist);
+      setCurrentIndex(0);
+    } else {
+      // Unshuffle: restore original order, find current track
+      const currentTrackPath = currentTrack.path;
+      const originalIndex = originalPlaylist.findIndex(t => t.path === currentTrackPath);
+      
+      if (originalIndex >= 0) {
+        setPlaylist(originalPlaylist);
+        setCurrentIndex(originalIndex);
+      }
     }
   };
 
@@ -182,9 +244,11 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
         isPlaying,
         playlist,
         currentIndex,
+        isShuffle,
         playTrack,
         playPlaylist,
         togglePlayPause,
+        toggleShuffle,
         playNext,
         playPrevious,
         audioRef,

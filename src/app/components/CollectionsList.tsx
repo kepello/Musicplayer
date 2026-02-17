@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router';
 import { getCatalog, getRawFileUrl, CatalogCollection } from '@/app/services/github';
-import { Folder, Music, Play, Download, List, Archive } from 'lucide-react';
+import { Folder, Music, Play, Download, List, Archive, Shuffle } from 'lucide-react';
 import { usePlayer, Track } from '@/app/contexts/PlayerContext';
 
 export function CollectionsList() {
@@ -103,6 +103,20 @@ export function CollectionsList() {
                     title="Play Collection"
                   >
                     <Play className="w-4 h-4 text-white" fill="currentColor" />
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      if (tracks.length > 0) {
+                        playPlaylist(tracks, 0, true, true); // Shuffle and stop after finishes
+                      }
+                    }}
+                    disabled={tracks.length === 0}
+                    className="p-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-full transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Shuffle Collection"
+                  >
+                    <Shuffle className="w-4 h-4 text-white" />
                   </button>
                   <button
                     onClick={async (e) => {

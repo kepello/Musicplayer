@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { usePlayer } from '@/app/contexts/PlayerContext';
-import { Play, Pause, SkipBack, SkipForward, Download } from 'lucide-react';
+import { Play, Pause, SkipBack, SkipForward, Download, Shuffle } from 'lucide-react';
 
 export function MusicPlayer() {
-  const { currentTrack, isPlaying, togglePlayPause, playNext, playPrevious, audioRef } = usePlayer();
+  const { currentTrack, isPlaying, isShuffle, togglePlayPause, toggleShuffle, playNext, playPrevious, audioRef } = usePlayer();
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
 
@@ -58,6 +58,17 @@ export function MusicPlayer() {
       <div className="max-w-screen-xl mx-auto flex items-center gap-4">
         {/* Controls - moved to left */}
         <div className="flex items-center gap-2">
+          <button
+            onClick={toggleShuffle}
+            className={`p-1.5 rounded-full transition-colors ${
+              isShuffle 
+                ? 'bg-white text-black' 
+                : 'hover:bg-zinc-800 text-zinc-300 hover:text-white'
+            }`}
+            title={isShuffle ? 'Shuffle on' : 'Shuffle off'}
+          >
+            <Shuffle className="w-4 h-4" />
+          </button>
           <button
             onClick={playPrevious}
             className="p-1.5 hover:bg-zinc-800 rounded-full transition-colors text-zinc-300 hover:text-white"
