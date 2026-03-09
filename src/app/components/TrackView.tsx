@@ -185,9 +185,10 @@ export function TrackView() {
               {track?.mp3 && (
                 <button
                   onClick={() => handleDownload('mp3')}
-                  className="px-4 py-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-lg transition-all text-sm"
+                  className="px-4 py-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-lg transition-all text-sm flex items-center gap-2"
                   title="Download MP3 - Universal compatibility, smaller size"
                 >
+                  <Download className="w-4 h-4" />
                   MP3 <span className="text-zinc-400">(universal)</span>
                 </button>
               )}
@@ -195,9 +196,10 @@ export function TrackView() {
               {track?.m4a && (
                 <button
                   onClick={() => handleDownload('m4a')}
-                  className="px-4 py-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-lg transition-all text-sm"
+                  className="px-4 py-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-lg transition-all text-sm flex items-center gap-2"
                   title="Download M4A - Better quality, Apple devices"
                 >
+                  <Download className="w-4 h-4" />
                   M4A <span className="text-zinc-400">(Apple)</span>
                 </button>
               )}
@@ -205,9 +207,10 @@ export function TrackView() {
               {track?.wav && (
                 <button
                   onClick={() => handleDownload('wav')}
-                  className="px-4 py-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-lg transition-all text-sm"
+                  className="px-4 py-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-lg transition-all text-sm flex items-center gap-2"
                   title="Download WAV - Lossless quality, largest size"
                 >
+                  <Download className="w-4 h-4" />
                   WAV <span className="text-zinc-400">(lossless)</span>
                 </button>
               )}

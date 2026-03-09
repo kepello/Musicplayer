@@ -169,9 +169,10 @@ export function Collection() {
                         a.click();
                         document.body.removeChild(a);
                       }}
-                      className="px-4 py-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-lg transition-all text-sm"
+                      className="px-4 py-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-lg transition-all text-sm flex items-center gap-2"
                       title="Download MP3 ZIP - Universal compatibility, smaller size"
                     >
+                      <Download className="w-4 h-4" />
                       MP3 <span className="text-zinc-400">(universal)</span>
                     </button>
                   )}
@@ -185,9 +186,10 @@ export function Collection() {
                         a.click();
                         document.body.removeChild(a);
                       }}
-                      className="px-4 py-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-lg transition-all text-sm"
+                      className="px-4 py-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-lg transition-all text-sm flex items-center gap-2"
                       title="Download M4A ZIP - Better quality, Apple devices"
                     >
+                      <Download className="w-4 h-4" />
                       M4A <span className="text-zinc-400">(Apple)</span>
                     </button>
                   )}
@@ -201,9 +203,10 @@ export function Collection() {
                         a.click();
                         document.body.removeChild(a);
                       }}
-                      className="px-4 py-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-lg transition-all text-sm"
+                      className="px-4 py-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-lg transition-all text-sm flex items-center gap-2"
                       title="Download WAV ZIP - Lossless quality, largest size"
                     >
+                      <Download className="w-4 h-4" />
                       WAV <span className="text-zinc-400">(lossless)</span>
                     </button>
                   )}
@@ -263,9 +266,10 @@ export function Collection() {
                             a.click();
                             document.body.removeChild(a);
                           }}
-                          className="px-2 py-1 text-xs bg-white/10 hover:bg-white/20 rounded transition-colors"
+                          className="px-2 py-1 text-xs bg-white/10 hover:bg-white/20 rounded transition-colors flex items-center gap-1"
                           title="Download MP3 - Universal compatibility"
                         >
+                          <Download className="w-3 h-3" />
                           MP3
                         </button>
                       )}
@@ -280,9 +284,10 @@ export function Collection() {
                             a.click();
                             document.body.removeChild(a);
                           }}
-                          className="px-2 py-1 text-xs bg-white/10 hover:bg-white/20 rounded transition-colors"
+                          className="px-2 py-1 text-xs bg-white/10 hover:bg-white/20 rounded transition-colors flex items-center gap-1"
                           title="Download M4A - Better quality, Apple devices"
                         >
+                          <Download className="w-3 h-3" />
                           M4A
                         </button>
                       )}
@@ -297,9 +302,10 @@ export function Collection() {
                             a.click();
                             document.body.removeChild(a);
                           }}
-                          className="px-2 py-1 text-xs bg-white/10 hover:bg-white/20 rounded transition-colors"
+                          className="px-2 py-1 text-xs bg-white/10 hover:bg-white/20 rounded transition-colors flex items-center gap-1"
                           title="Download WAV - Lossless quality"
                         >
+                          <Download className="w-3 h-3" />
                           WAV
                         </button>
                       )}
