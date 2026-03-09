@@ -36,13 +36,13 @@ export function CollectionsList() {
         );
         
         for (const track of sortedTracks) {
-          if (track.mp3) {
+          if (track.mp3 || track.m4a || track.wav) {
             tracks.push({
               path: track.path,
               name: track.name,
               title: track.title,
               trackNumber: track.trackNumber,
-              url: track.mp3,  // Already full URL
+              url: track.mp3 || track.m4a || (track.wav ? getRawFileUrl(track.wav) : ''),  // MP3/M4A are full URLs, WAV needs construction
               collection: collection.name,
             });
           }

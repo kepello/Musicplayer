@@ -61,13 +61,13 @@ export function TrackView() {
       );
       
       const tracks: Track[] = sortedTracks
-        .filter(t => t.mp3)
+        .filter(t => t.mp3 || t.m4a || t.wav)
         .map(t => ({
           path: t.path,
           name: t.name,
           title: t.title,
           trackNumber: t.trackNumber,
-          url: t.mp3!,  // Already full URL
+          url: t.mp3 || t.m4a || (t.wav ? getRawFileUrl(t.wav) : ''),  // MP3/M4A are full URLs, WAV needs construction
           collection: collectionName,
         }));
       
@@ -79,22 +79,25 @@ export function TrackView() {
   }, [collectionName, albumName, trackName]);
 
   const handlePlay = () => {
-    if (track?.mp3) {
+    if (track?.mp3 || track?.m4a || track?.wav) {
       const trackPath = track.path;
+      const url = track.mp3 || track.m4a || (track.wav && catalog ? constructGitUrl(track.wav, catalog) : '');
       
-      playTrack(
-        {
-          path: trackPath,
-          name: track.name,
-          title: track.title,
-          trackNumber: track.trackNumber,
-          url: track.mp3,  // Already full URL
-          collection: collectionName,
-          lyrics: track.lyrics || undefined,
-        },
-        undefined, // No playlist context - play only this track
-        true // Stop after this track finishes
-      );
+      if (url) {
+        playTrack(
+          {
+            path: trackPath,
+            name: track.name,
+            title: track.title,
+            trackNumber: track.trackNumber,
+            url: url,
+            collection: collectionName,
+            lyrics: track.lyrics || undefined,
+          },
+          undefined, // No playlist context - play only this track
+          true // Stop after this track finishes
+        );
+      }
     }
   };
 

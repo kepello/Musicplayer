@@ -47,13 +47,13 @@ export function AlbumView() {
       );
       
       const tracks: Track[] = sortedTracks
-        .filter(track => track.mp3)
+        .filter(track => track.mp3 || track.m4a || track.wav)
         .map(track => ({
           path: track.path,
           name: track.name,
           title: track.title,
           trackNumber: track.trackNumber,
-          url: track.mp3!,  // Already full URL
+          url: track.mp3 || track.m4a || (track.wav ? getRawFileUrl(track.wav) : ''),  // MP3/M4A are full URLs, WAV needs construction
           album: albumName,
           collection: collectionName,
         }));
