@@ -40,10 +40,13 @@ export interface GitHubContent {
 // Catalog types - Simplified structure: Library → Collections (Albums) → Tracks
 export interface CatalogTrack {
   name: string;
+  title?: string;   // Friendly display name
+  trackNumber?: number;  // Sequential ordering
   path: string;
   readme?: string;  // Full markdown content
-  mp3?: string;     // Relative path to file
-  m4a?: string;     // Relative path to file
+  mp3?: string;     // Full URL to GitHub Releases
+  m4a?: string;     // Full URL to GitHub Releases
+  wav?: string;     // Relative path to WAV file in git
   playlist?: string; // Relative path to file
   lyrics?: string | null;  // Full text content (not path)
 }
@@ -53,11 +56,13 @@ export interface CatalogCollection {
   name: string;
   path: string;
   readme?: string;
-  cover?: string;  // 800x800 image
-  zipM4A?: string;
-  zipMP3?: string;
-  playlistM4A?: string;
-  playlistMP3?: string;
+  cover?: string;  // Cover image (any reasonable size)
+  zipMP3?: string;  // Full URL to MP3 album ZIP
+  zipM4A?: string;  // Full URL to M4A album ZIP
+  zipWAV?: string;  // Full URL to WAV album ZIP
+  playlistMP3?: string;  // Relative path to MP3 playlist
+  playlistM4A?: string;  // Relative path to M4A playlist
+  playlistWAV?: string;  // Relative path to WAV playlist
   tracks: CatalogTrack[];
 }
 
@@ -160,10 +165,25 @@ export async function getFileContent(path: string): Promise<string> {
   }
 }
 
+/**
+ * Construct URL for files in git repository (not releases)
+ * Use for: WAV files, playlists, cover images
+ * DO NOT use for: MP3/M4A files (already full URLs), album ZIPs (already full URLs)
+ */
 export function getRawFileUrl(path: string): string {
   // Add timestamp as cache buster to force fresh image loads
   const timestamp = Date.now();
   return `https://raw.githubusercontent.com/${OWNER}/${REPO}/${BRANCH}/${path}?t=${timestamp}`;
+}
+
+/**
+ * Construct URL for files in git repository using catalog repository info
+ * Use for: WAV files, playlists, cover images
+ */
+export function constructGitUrl(relativePath: string, catalog: Catalog): string {
+  const { owner, repo, branch } = catalog.repository;
+  const timestamp = Date.now();
+  return `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${relativePath}?t=${timestamp}`;
 }
 
 // Cache for the catalog data

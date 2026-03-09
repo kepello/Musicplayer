@@ -91,7 +91,7 @@ export function MusicPlayer() {
 
         {/* Track info */}
         <div className="flex-1 min-w-0">
-          <div className="font-medium truncate text-white text-sm">{currentTrack.name}</div>
+          <div className="font-medium truncate text-white text-sm">{currentTrack.title || currentTrack.name}</div>
           <div className="text-xs text-zinc-400 truncate">
             {currentTrack.collection && currentTrack.album 
               ? `${currentTrack.collection} / ${currentTrack.album}`

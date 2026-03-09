@@ -3,6 +3,8 @@ import React, { createContext, useContext, useState, useRef, useEffect } from 'r
 export interface Track {
   path: string;
   name: string;
+  title?: string;  // Friendly display name
+  trackNumber?: number;  // Sequential ordering
   url: string;
   album?: string;
   collection?: string;

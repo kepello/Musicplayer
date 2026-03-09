@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router';
-import { getCatalog, getRawFileUrl, CatalogTrack } from '@/app/services/github';
+import { getCatalog, getRawFileUrl, constructGitUrl, CatalogTrack, Catalog } from '@/app/services/github';
 import { usePlayer, Track } from '@/app/contexts/PlayerContext';
 import { ChevronLeft, Play, Download, Music } from 'lucide-react';
 import Markdown from 'react-markdown';
@@ -14,6 +14,7 @@ export function TrackView() {
   }>();
   const { playTrack, currentTrack, isPlaying } = usePlayer();
   const [track, setTrack] = useState<CatalogTrack | null>(null);
+  const [catalog, setCatalog] = useState<Catalog | null>(null);
   const [allTracks, setAllTracks] = useState<Track[]>([]);
   const [loading, setLoading] = useState(true);
   
@@ -28,14 +29,16 @@ export function TrackView() {
       
       setLoading(true);
       
-      const catalog = await getCatalog();
-      if (!catalog) {
+      const catalogData = await getCatalog();
+      if (!catalogData) {
         setLoading(false);
         return;
       }
       
+      setCatalog(catalogData);
+      
       // Find the collection (which is the album)
-      const collection = catalog.collections.find(c => c.name === collectionName);
+      const collection = catalogData.collections.find(c => c.name === collectionName);
       if (!collection) {
         setLoading(false);
         return;
@@ -52,12 +55,19 @@ export function TrackView() {
       setTrack(foundTrack);
       
       // Build track list for playlist context
-      const tracks: Track[] = collection.tracks
+      // Sort by trackNumber if available
+      const sortedTracks = [...collection.tracks].sort((a, b) => 
+        (a.trackNumber || 0) - (b.trackNumber || 0)
+      );
+      
+      const tracks: Track[] = sortedTracks
         .filter(t => t.mp3)
         .map(t => ({
           path: t.path,
           name: t.name,
-          url: getRawFileUrl(t.mp3!),
+          title: t.title,
+          trackNumber: t.trackNumber,
+          url: t.mp3!,  // Already full URL
           collection: collectionName,
         }));
       
@@ -70,16 +80,17 @@ export function TrackView() {
 
   const handlePlay = () => {
     if (track?.mp3) {
-      const mp3Url = getRawFileUrl(track.mp3);
       const trackPath = track.path;
       
       playTrack(
         {
           path: trackPath,
-          name: trackName!,
-          url: mp3Url,
+          name: track.name,
+          title: track.title,
+          trackNumber: track.trackNumber,
+          url: track.mp3,  // Already full URL
           collection: collectionName,
-          lyrics: track.lyrics,
+          lyrics: track.lyrics || undefined,
         },
         undefined, // No playlist context - play only this track
         true // Stop after this track finishes
@@ -87,71 +98,31 @@ export function TrackView() {
     }
   };
 
-  const handleDownload = () => {
-    // Download track playlist if available, otherwise generate it
-    if (track?.playlist) {
+  const handleDownload = (format?: 'mp3' | 'm4a' | 'wav') => {
+    if (!track) return;
+    
+    // Download the actual music file
+    if (format === 'wav' && track.wav && catalog) {
       const a = document.createElement('a');
-      a.href = getRawFileUrl(track.playlist);
-      a.download = `${trackName}.m3u8`;
+      a.href = constructGitUrl(track.wav, catalog);
+      a.download = `${track.name}.wav`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-    } else if (track?.mp3 || track?.m4a) {
-      // Generate track playlist on-the-fly with both formats
-      let playlistContent = '#EXTM3U\n#EXTENC:UTF-8\n';
-      if (track.m4a) {
-        playlistContent += `\n#EXTINF:-1,${trackName} (M4A)\n${getRawFileUrl(track.m4a)}`;
-      }
-      if (track.mp3) {
-        playlistContent += `\n#EXTINF:-1,${trackName} (MP3)\n${getRawFileUrl(track.mp3)}`;
-      }
-      playlistContent += '\n';
-      const blob = new Blob([playlistContent], { type: 'audio/x-mpegurl' });
-      const url = URL.createObjectURL(blob);
+    } else if ((format === 'mp3' || !format) && track.mp3) {
       const a = document.createElement('a');
-      a.href = url;
-      a.download = `${trackName}.m3u8`;
+      a.href = track.mp3;  // Already full URL
+      a.download = `${track.name}.mp3`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    }
-  };
-  
-  const generatePlaylist = () => {
-    // Generate playlist content for single track with both formats
-    let playlistContent = '#EXTM3U\n#EXTENC:UTF-8\n\n';
-    if (track?.m4a) {
-      playlistContent += `#EXTINF:-1,${trackName} (M4A)\n`;
-      playlistContent += `${getRawFileUrl(track.m4a)}\n\n`;
-    }
-    if (track?.mp3) {
-      playlistContent += `#EXTINF:-1,${trackName} (MP3)\n`;
-      playlistContent += `${getRawFileUrl(track.mp3)}\n`;
-    }
-    return playlistContent;
-  };
-  
-  const handleDownloadPlaylist = () => {
-    if (track?.playlist) {
+    } else if (format === 'm4a' && track.m4a) {
       const a = document.createElement('a');
-      a.href = getRawFileUrl(track.playlist);
-      a.download = `${trackName}.m3u8`;
+      a.href = track.m4a;  // Already full URL
+      a.download = `${track.name}.m4a`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-    } else if (track?.mp3) {
-      // Generate playlist on-the-fly
-      const playlistContent = generatePlaylist();
-      const blob = new Blob([playlistContent], { type: 'audio/x-mpegurl' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${trackName}.m3u8`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
     }
   };
 
@@ -186,7 +157,10 @@ export function TrackView() {
 
         <div className="mb-8">
           <div className="bg-zinc-900 rounded-lg p-6 mb-6">
-            <h1 className="text-4xl font-bold mb-4">{trackName}</h1>
+            {track?.trackNumber && (
+              <div className="text-sm text-zinc-500 mb-2">Track {track.trackNumber}</div>
+            )}
+            <h1 className="text-4xl font-bold mb-4">{track?.title || trackName}</h1>
             
             {track?.readme && (
               <div className="text-zinc-300 [&>p]:mb-4 columns-1 lg:columns-2 lg:gap-8">
@@ -195,7 +169,7 @@ export function TrackView() {
             )}
           </div>
           
-          {(track?.mp3 || track?.m4a) && (
+          {(track?.mp3 || track?.m4a || track?.wav) && (
             <div className="flex flex-wrap gap-3 mb-8">
               <button
                 onClick={handlePlay}
@@ -205,13 +179,35 @@ export function TrackView() {
                 <Play className="w-5 h-5 text-white" fill="currentColor" />
               </button>
               
-              <button
-                onClick={handleDownload}
-                className="p-3 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full transition-all"
-                title="Download track playlist"
-              >
-                <Download className="w-5 h-5 text-white" />
-              </button>
+              {track?.mp3 && (
+                <button
+                  onClick={() => handleDownload('mp3')}
+                  className="px-4 py-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-lg transition-all text-sm"
+                  title="Download MP3 - Universal compatibility, smaller size"
+                >
+                  MP3 <span className="text-zinc-400">(universal)</span>
+                </button>
+              )}
+              
+              {track?.m4a && (
+                <button
+                  onClick={() => handleDownload('m4a')}
+                  className="px-4 py-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-lg transition-all text-sm"
+                  title="Download M4A - Better quality, Apple devices"
+                >
+                  M4A <span className="text-zinc-400">(Apple)</span>
+                </button>
+              )}
+              
+              {track?.wav && (
+                <button
+                  onClick={() => handleDownload('wav')}
+                  className="px-4 py-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-lg transition-all text-sm"
+                  title="Download WAV - Lossless quality, largest size"
+                >
+                  WAV <span className="text-zinc-400">(lossless)</span>
+                </button>
+              )}
             </div>
           )}
         </div>

@@ -36,12 +36,19 @@ export function Collection() {
       setCollection(foundCollection);
       
       // Build track list from collection (collections have tracks directly)
-      const tracks: Track[] = foundCollection.tracks
+      // Sort by trackNumber if available
+      const sortedTracks = [...foundCollection.tracks].sort((a, b) => 
+        (a.trackNumber || 0) - (b.trackNumber || 0)
+      );
+      
+      const tracks: Track[] = sortedTracks
         .filter(track => track.mp3)
         .map(track => ({
           path: track.path,
           name: track.name,
-          url: getRawFileUrl(track.mp3!),
+          title: track.title,
+          trackNumber: track.trackNumber,
+          url: track.mp3!,  // Already full URL
           collection: collectionName,
         }));
       
@@ -149,35 +156,54 @@ export function Collection() {
                   >
                     <List className="w-5 h-5 text-white" />
                   </button>
-                  <button
-                    onClick={async () => {
-                      // Detect device for format preference
-                      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-                      const preferM4A = isMobile || /Mac/i.test(navigator.userAgent);
-                      
-                      // Download ZIP file
-                      if (preferM4A && collection?.zipM4A) {
+                  {collection?.zipMP3 && (
+                    <button
+                      onClick={async () => {
                         const a = document.createElement('a');
-                        a.href = getRawFileUrl(collection.zipM4A);
-                        a.download = `${collectionName}-M4A.zip`;
-                        document.body.appendChild(a);
-                        a.click();
-                        document.body.removeChild(a);
-                      } else if (collection?.zipMP3) {
-                        const a = document.createElement('a');
-                        a.href = getRawFileUrl(collection.zipMP3);
+                        a.href = collection.zipMP3;
                         a.download = `${collectionName}-MP3.zip`;
                         document.body.appendChild(a);
                         a.click();
                         document.body.removeChild(a);
-                      }
-                    }}
-                    disabled={!collection?.zipM4A && !collection?.zipMP3}
-                    className="p-3 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                    title="Download complete album archive"
-                  >
-                    <Archive className="w-5 h-5 text-white" />
-                  </button>
+                      }}
+                      className="px-4 py-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-lg transition-all text-sm"
+                      title="Download MP3 ZIP - Universal compatibility, smaller size"
+                    >
+                      MP3 <span className="text-zinc-400">(universal)</span>
+                    </button>
+                  )}
+                  {collection?.zipM4A && (
+                    <button
+                      onClick={async () => {
+                        const a = document.createElement('a');
+                        a.href = collection.zipM4A;
+                        a.download = `${collectionName}-M4A.zip`;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                      }}
+                      className="px-4 py-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-lg transition-all text-sm"
+                      title="Download M4A ZIP - Better quality, Apple devices"
+                    >
+                      M4A <span className="text-zinc-400">(Apple)</span>
+                    </button>
+                  )}
+                  {collection?.zipWAV && (
+                    <button
+                      onClick={async () => {
+                        const a = document.createElement('a');
+                        a.href = collection.zipWAV;
+                        a.download = `${collectionName}-WAV.zip`;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                      }}
+                      className="px-4 py-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-lg transition-all text-sm"
+                      title="Download WAV ZIP - Lossless quality, largest size"
+                    >
+                      WAV <span className="text-zinc-400">(lossless)</span>
+                    </button>
+                  )}
                 </div>
               </div>
               {collection?.readme && (
@@ -204,13 +230,13 @@ export function Collection() {
                 <div key={trackData.path} className="bg-zinc-900 rounded-lg p-4 hover:bg-zinc-800 transition-colors">
                   <div className="flex items-center gap-4">
                     <div className="text-zinc-500 font-mono text-sm w-8">
-                      {String(index + 1).padStart(2, '0')}
+                      {trackData.trackNumber ? String(trackData.trackNumber).padStart(2, '0') : String(index + 1).padStart(2, '0')}
                     </div>
                     <Link
                       to={`/collection/${encodeURIComponent(collectionName!)}/track/${encodeURIComponent(trackData.name)}`}
                       className="flex-1 font-medium hover:text-white transition-colors"
                     >
-                      {trackData.name}
+                      {trackData.title || trackData.name}
                     </Link>
                     <div className="flex gap-2">
                       <button
@@ -238,10 +264,10 @@ export function Collection() {
                             // Generate track playlist on-the-fly
                             let playlistContent = '#EXTM3U\n#EXTENC:UTF-8\n';
                             if (catalogTrack.m4a) {
-                              playlistContent += `\n#EXTINF:-1,${trackData.name} (M4A)\n${getRawFileUrl(catalogTrack.m4a)}`;
+                              playlistContent += `\n#EXTINF:-1,${trackData.name} (M4A)\n${catalogTrack.m4a}`;
                             }
                             if (catalogTrack.mp3) {
-                              playlistContent += `\n#EXTINF:-1,${trackData.name} (MP3)\n${getRawFileUrl(catalogTrack.mp3)}`;
+                              playlistContent += `\n#EXTINF:-1,${trackData.name} (MP3)\n${catalogTrack.mp3}`;
                             }
                             playlistContent += '\n';
                             const blob = new Blob([playlistContent], { type: 'audio/x-mpegurl' });

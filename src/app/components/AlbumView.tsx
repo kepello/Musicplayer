@@ -41,12 +41,19 @@ export function AlbumView() {
       setAlbum(foundAlbum);
       
       // Build track list from album (which is a collection)
-      const tracks: Track[] = foundAlbum.tracks
+      // Sort by trackNumber if available
+      const sortedTracks = [...foundAlbum.tracks].sort((a, b) => 
+        (a.trackNumber || 0) - (b.trackNumber || 0)
+      );
+      
+      const tracks: Track[] = sortedTracks
         .filter(track => track.mp3)
         .map(track => ({
           path: track.path,
           name: track.name,
-          url: getRawFileUrl(track.mp3!),
+          title: track.title,
+          trackNumber: track.trackNumber,
+          url: track.mp3!,  // Already full URL
           album: albumName,
           collection: collectionName,
         }));
@@ -58,11 +65,11 @@ export function AlbumView() {
     loadAlbum();
   }, [collectionName, albumName]);
 
-  const handleDownloadAlbum = (format: 'M4A' | 'MP3') => {
-    const zipUrl = format === 'M4A' ? album?.zipM4A : album?.zipMP3;
+  const handleDownloadAlbum = (format: 'M4A' | 'MP3' | 'WAV') => {
+    const zipUrl = format === 'WAV' ? album?.zipWAV : format === 'M4A' ? album?.zipM4A : album?.zipMP3;
     if (zipUrl) {
       const a = document.createElement('a');
-      a.href = getRawFileUrl(zipUrl);
+      a.href = zipUrl;  // Already full URL
       a.download = `${albumName}-${format}.zip`;
       document.body.appendChild(a);
       a.click();
@@ -75,7 +82,8 @@ export function AlbumView() {
     let playlistContent = '#EXTM3U\n#EXTENC:UTF-8\n';
     
     for (const track of allTracks) {
-      playlistContent += `\n#EXTINF:-1,${track.name}\n`;
+      const displayName = track.title || track.name;
+      playlistContent += `\n#EXTINF:-1,${displayName}\n`;
       playlistContent += `${track.url}`;
     }
     playlistContent += '\n';
@@ -165,7 +173,8 @@ export function AlbumView() {
                           // Generate album playlist
                           let playlistContent = '#EXTM3U\n#EXTENC:UTF-8\n';
                           allTracks.forEach(track => {
-                            playlistContent += `\n#EXTINF:-1,${track.name}\n${track.url}`;
+                            const displayName = track.title || track.name;
+                            playlistContent += `\n#EXTINF:-1,${displayName}\n${track.url}`;
                           });
                           playlistContent += '\n';
                           const blob = new Blob([playlistContent], { type: 'audio/x-mpegurl' });
@@ -231,22 +240,31 @@ export function AlbumView() {
                   {/* Desktop: Show both M4A and MP3 options */}
                   {!isMobile && (
                     <>
-                      {album?.zipM4A && (
-                        <button
-                          onClick={() => handleDownloadAlbum('M4A')}
-                          className="p-3 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full transition-all"
-                          title="Download M4A ZIP"
-                        >
-                          <Download className="w-5 h-5 text-white" />
-                        </button>
-                      )}
                       {album?.zipMP3 && (
                         <button
                           onClick={() => handleDownloadAlbum('MP3')}
-                          className="p-3 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full transition-all"
-                          title="Download MP3 ZIP"
+                          className="px-4 py-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-lg transition-all text-sm"
+                          title="Download MP3 ZIP - Universal compatibility, smaller size"
                         >
-                          <Download className="w-5 h-5 text-white" />
+                          MP3 <span className="text-zinc-400">(universal)</span>
+                        </button>
+                      )}
+                      {album?.zipM4A && (
+                        <button
+                          onClick={() => handleDownloadAlbum('M4A')}
+                          className="px-4 py-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-lg transition-all text-sm"
+                          title="Download M4A ZIP - Better quality, Apple devices"
+                        >
+                          M4A <span className="text-zinc-400">(Apple)</span>
+                        </button>
+                      )}
+                      {album?.zipWAV && (
+                        <button
+                          onClick={() => handleDownloadAlbum('WAV')}
+                          className="px-4 py-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-lg transition-all text-sm"
+                          title="Download WAV ZIP - Lossless quality, largest size"
+                        >
+                          WAV <span className="text-zinc-400">(lossless)</span>
                         </button>
                       )}
                       {allTracks.length > 0 && (
@@ -304,7 +322,7 @@ export function AlbumView() {
                 <div key={trackData.path} className="bg-zinc-900 rounded-lg p-4 hover:bg-zinc-800 transition-colors">
                   <div className="flex items-center gap-4">
                     <div className="text-zinc-500 font-mono text-sm w-8">
-                      {String(index + 1).padStart(2, '0')}
+                      {trackData.trackNumber ? String(trackData.trackNumber).padStart(2, '0') : String(index + 1).padStart(2, '0')}
                     </div>
                     <Link
                       to={`/collection/${encodeURIComponent(collectionName!)}/album/${encodeURIComponent(albumName!)}/track/${encodeURIComponent(trackData.name)}`}
@@ -312,7 +330,7 @@ export function AlbumView() {
                     >
                       <Play className="w-5 h-5 text-zinc-600 group-hover:text-white transition-colors" />
                       <h3 className="font-medium group-hover:text-white transition-colors">
-                        {trackData.name}
+                        {trackData.title || trackData.name}
                       </h3>
                     </Link>
                     <div className="flex gap-2">
@@ -330,7 +348,8 @@ export function AlbumView() {
                         onClick={async (e) => {
                           e.preventDefault();
                           // Generate single-track playlist
-                          const playlistContent = `#EXTM3U\n#EXTENC:UTF-8\n\n#EXTINF:-1,${trackData.name}\n${trackData.url}\n`;
+                          const displayName = trackData.title || trackData.name;
+                          const playlistContent = `#EXTM3U\n#EXTENC:UTF-8\n\n#EXTINF:-1,${displayName}\n${trackData.url}\n`;
                           const blob = new Blob([playlistContent], { type: 'audio/x-mpegurl' });
                           const url = URL.createObjectURL(blob);
                           const a = document.createElement('a');

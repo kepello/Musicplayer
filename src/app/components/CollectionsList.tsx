@@ -30,12 +30,19 @@ export function CollectionsList() {
         const tracks: Track[] = [];
         
         // Collections have tracks directly (no nested albums)
-        for (const track of collection.tracks) {
+        // Sort by trackNumber if available
+        const sortedTracks = [...collection.tracks].sort((a, b) => 
+          (a.trackNumber || 0) - (b.trackNumber || 0)
+        );
+        
+        for (const track of sortedTracks) {
           if (track.mp3) {
             tracks.push({
               path: track.path,
               name: track.name,
-              url: getRawFileUrl(track.mp3),
+              title: track.title,
+              trackNumber: track.trackNumber,
+              url: track.mp3,  // Already full URL
               collection: collection.name,
             });
           }
@@ -167,38 +174,60 @@ export function CollectionsList() {
                   >
                     <List className="w-4 h-4 text-white" />
                   </button>
-                  <button
-                    onClick={async (e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      
-                      // Detect device for format preference
-                      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-                      const preferM4A = isMobile || /Mac/i.test(navigator.userAgent);
-                      
-                      // Download ZIP file
-                      if (preferM4A && collection.zipM4A) {
+                  {collection.zipMP3 && (
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
                         const a = document.createElement('a');
-                        a.href = getRawFileUrl(collection.zipM4A);
-                        a.download = `${collection.name}-M4A.zip`;
-                        document.body.appendChild(a);
-                        a.click();
-                        document.body.removeChild(a);
-                      } else if (collection.zipMP3) {
-                        const a = document.createElement('a');
-                        a.href = getRawFileUrl(collection.zipMP3);
+                        a.href = collection.zipMP3;
                         a.download = `${collection.name}-MP3.zip`;
                         document.body.appendChild(a);
                         a.click();
                         document.body.removeChild(a);
-                      }
-                    }}
-                    disabled={!collection.zipM4A && !collection.zipMP3}
-                    className="p-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-full transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                    title="Download complete album archive"
-                  >
-                    <Archive className="w-4 h-4 text-white" />
-                  </button>
+                      }}
+                      className="p-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-full transition-all"
+                      title="MP3 (universal compatibility, smaller size)"
+                    >
+                      <Archive className="w-4 h-4 text-white" />
+                    </button>
+                  )}
+                  {collection.zipM4A && (
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const a = document.createElement('a');
+                        a.href = collection.zipM4A;
+                        a.download = `${collection.name}-M4A.zip`;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                      }}
+                      className="p-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-full transition-all"
+                      title="M4A (better quality, Apple devices)"
+                    >
+                      <Archive className="w-4 h-4 text-white" />
+                    </button>
+                  )}
+                  {collection.zipWAV && (
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const a = document.createElement('a');
+                        a.href = collection.zipWAV;
+                        a.download = `${collection.name}-WAV.zip`;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                      }}
+                      className="p-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-full transition-all"
+                      title="WAV (lossless quality, largest size)"
+                    >
+                      <Archive className="w-4 h-4 text-white" />
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
