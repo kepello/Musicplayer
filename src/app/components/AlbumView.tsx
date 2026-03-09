@@ -215,17 +215,19 @@ export function AlbumView() {
                 <div className="mt-6 flex flex-wrap gap-3">
                   <button
                     onClick={() => playPlaylist(allTracks, 0)}
-                    className="p-3 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full transition-all"
+                    className="px-4 py-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-lg transition-all text-sm flex items-center gap-2"
                     title="Play Album"
                   >
-                    <Play className="w-5 h-5 text-white" fill="currentColor" />
+                    <Play className="w-4 h-4 text-white" fill="currentColor" />
+                    <span>Play</span>
                   </button>
                   <button
                     onClick={() => playPlaylist(allTracks, 0, false, true)}
-                    className="p-3 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full transition-all"
+                    className="px-4 py-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-lg transition-all text-sm flex items-center gap-2"
                     title="Shuffle Album"
                   >
-                    <Shuffle className="w-5 h-5 text-white" />
+                    <Shuffle className="w-4 h-4 text-white" />
+                    <span>Shuffle</span>
                   </button>
                   
                   {(album?.zipM4A || album?.zipMP3 || album?.zipWAV || album?.playlistM4A || album?.playlistMP3 || allTracks.length > 0) && (

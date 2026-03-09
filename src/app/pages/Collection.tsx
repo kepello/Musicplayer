@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router';
 import { getCatalog, getRawFileUrl, constructGitUrl, CatalogCollection, CatalogTrack, Catalog } from '@/app/services/github';
-import { ChevronLeft, Music, Play, Download, List, Archive, ChevronDown } from 'lucide-react';
+import { ChevronLeft, Music, Play, Download, List, Archive, ChevronDown, Shuffle } from 'lucide-react';
 import Markdown from 'react-markdown';
 import { stripHtmlFromMarkdown } from '@/app/utils/markdown';
 import { usePlayer, Track } from '@/app/contexts/PlayerContext';
@@ -105,7 +105,7 @@ export function Collection() {
             <div className="flex-1 p-6">
               <div className="flex items-start justify-between mb-4">
                 <h1 className="text-4xl font-bold">{collectionName}</h1>
-                <div className="flex gap-2 ml-4">
+                <div className="flex flex-wrap gap-2 ml-4">
                   <button
                     onClick={() => {
                       if (allTracks.length > 0) {
@@ -113,64 +113,31 @@ export function Collection() {
                       }
                     }}
                     disabled={allTracks.length === 0}
-                    className="p-3 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                    title="Play Album"
+                    className="px-4 py-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm flex items-center gap-2"
+                    title="Play Collection"
                   >
-                    <Play className="w-5 h-5 text-white" fill="currentColor" />
+                    <Play className="w-4 h-4 text-white" fill="currentColor" />
+                    <span>Play</span>
                   </button>
                   <button
-                    onClick={async () => {
-                      if (allTracks.length === 0) return;
-                      
-                      // Detect device for format preference
-                      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-                      const preferM4A = isMobile || /Mac/i.test(navigator.userAgent);
-                      
-                      // Download standalone streaming playlist
-                      if (preferM4A && collection?.playlistM4A) {
-                        const a = document.createElement('a');
-                        a.href = getRawFileUrl(collection.playlistM4A);
-                        a.download = `${collectionName}-M4A.m3u8`;
-                        document.body.appendChild(a);
-                        a.click();
-                        document.body.removeChild(a);
-                      } else if (collection?.playlistMP3) {
-                        const a = document.createElement('a');
-                        a.href = getRawFileUrl(collection.playlistMP3);
-                        a.download = `${collectionName}-MP3.m3u8`;
-                        document.body.appendChild(a);
-                        a.click();
-                        document.body.removeChild(a);
-                      } else {
-                        // Fallback: Generate playlist on-the-fly
-                        let playlistContent = '#EXTM3U\n#EXTENC:UTF-8\n';
-                        allTracks.forEach(track => {
-                          playlistContent += `\n#EXTINF:-1,${track.name}\n${track.url}`;
-                        });
-                        playlistContent += '\n';
-                        const blob = new Blob([playlistContent], { type: 'audio/x-mpegurl' });
-                        const url = URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.download = `${collectionName}.m3u8`;
-                        document.body.appendChild(a);
-                        a.click();
-                        document.body.removeChild(a);
-                        URL.revokeObjectURL(url);
+                    onClick={() => {
+                      if (allTracks.length > 0) {
+                        playPlaylist(allTracks, 0, true, true);
                       }
                     }}
                     disabled={allTracks.length === 0}
-                    className="p-3 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                    title="Download streaming playlist"
+                    className="px-4 py-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm flex items-center gap-2"
+                    title="Shuffle Collection"
                   >
-                    <List className="w-5 h-5 text-white" />
+                    <Shuffle className="w-4 h-4 text-white" />
+                    <span>Shuffle</span>
                   </button>
-                  {(collection?.zipMP3 || collection?.zipM4A || collection?.zipWAV) && (
+                  {(collection?.zipMP3 || collection?.zipM4A || collection?.zipWAV || collection?.playlistMP3 || collection?.playlistM4A || allTracks.length > 0) && (
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <button className="px-4 py-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-lg transition-all text-sm flex items-center gap-2">
-                          <Archive className="w-4 h-4" />
-                          Download Album
+                          <Download className="w-4 h-4" />
+                          Download
                           <ChevronDown className="w-4 h-4" />
                         </button>
                       </DropdownMenuTrigger>
@@ -187,7 +154,7 @@ export function Collection() {
                             }}
                             className="cursor-pointer hover:bg-zinc-800 text-white"
                           >
-                            <Download className="w-4 h-4" />
+                            <Archive className="w-4 h-4" />
                             <span>MP3 ZIP <span className="text-zinc-500">(universal)</span></span>
                           </DropdownMenuItem>
                         )}
@@ -203,7 +170,7 @@ export function Collection() {
                             }}
                             className="cursor-pointer hover:bg-zinc-800 text-white"
                           >
-                            <Download className="w-4 h-4" />
+                            <Archive className="w-4 h-4" />
                             <span>M4A ZIP <span className="text-zinc-500">(Apple)</span></span>
                           </DropdownMenuItem>
                         )}
@@ -219,8 +186,49 @@ export function Collection() {
                             }}
                             className="cursor-pointer hover:bg-zinc-800 text-white"
                           >
-                            <Download className="w-4 h-4" />
+                            <Archive className="w-4 h-4" />
                             <span>WAV ZIP <span className="text-zinc-500">(lossless)</span></span>
+                          </DropdownMenuItem>
+                        )}
+                        {allTracks.length > 0 && (collection?.playlistMP3 || collection?.playlistM4A) && (
+                          <DropdownMenuItem
+                            onClick={async () => {
+                              if (collection?.playlistMP3) {
+                                const a = document.createElement('a');
+                                a.href = getRawFileUrl(collection.playlistMP3);
+                                a.download = `${collectionName}-MP3.m3u8`;
+                                document.body.appendChild(a);
+                                a.click();
+                                document.body.removeChild(a);
+                              } else if (collection?.playlistM4A) {
+                                const a = document.createElement('a');
+                                a.href = getRawFileUrl(collection.playlistM4A);
+                                a.download = `${collectionName}-M4A.m3u8`;
+                                document.body.appendChild(a);
+                                a.click();
+                                document.body.removeChild(a);
+                              } else {
+                                // Fallback: Generate playlist on-the-fly
+                                let playlistContent = '#EXTM3U\n#EXTENC:UTF-8\n';
+                                allTracks.forEach(track => {
+                                  playlistContent += `\n#EXTINF:-1,${track.name}\n${track.url}`;
+                                });
+                                playlistContent += '\n';
+                                const blob = new Blob([playlistContent], { type: 'audio/x-mpegurl' });
+                                const url = URL.createObjectURL(blob);
+                                const a = document.createElement('a');
+                                a.href = url;
+                                a.download = `${collectionName}.m3u8`;
+                                document.body.appendChild(a);
+                                a.click();
+                                document.body.removeChild(a);
+                                URL.revokeObjectURL(url);
+                              }
+                            }}
+                            className="cursor-pointer hover:bg-zinc-800 text-white"
+                          >
+                            <List className="w-4 h-4" />
+                            <span>Playlist <span className="text-zinc-500">(streaming)</span></span>
                           </DropdownMenuItem>
                         )}
                       </DropdownMenuContent>
