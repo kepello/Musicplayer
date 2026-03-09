@@ -1,7 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router';
 import { getCatalog, getRawFileUrl, constructGitUrl, CatalogAlbum, Catalog } from '@/app/services/github';
-import { ChevronLeft, Music, Play, Download, List, Shuffle } from 'lucide-react';
+import { ChevronLeft, Music, Play, Download, List, Shuffle, ChevronDown, Archive } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/app/components/ui/dropdown-menu';
 import Markdown from 'react-markdown';
 import { stripHtmlFromMarkdown } from '@/app/utils/markdown';
 import { usePlayer, Track } from '@/app/contexts/PlayerContext';
@@ -243,35 +249,36 @@ export function AlbumView() {
                   {/* Desktop: Show both M4A and MP3 options */}
                   {!isMobile && (
                     <>
-                      {album?.zipMP3 && (
-                        <button
-                          onClick={() => handleDownloadAlbum('MP3')}
-                          className="px-4 py-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-lg transition-all text-sm flex items-center gap-2"
-                          title="Download MP3 ZIP - Universal compatibility, smaller size"
-                        >
-                          <Download className="w-4 h-4" />
-                          MP3 <span className="text-zinc-400">(universal)</span>
-                        </button>
-                      )}
-                      {album?.zipM4A && (
-                        <button
-                          onClick={() => handleDownloadAlbum('M4A')}
-                          className="px-4 py-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-lg transition-all text-sm flex items-center gap-2"
-                          title="Download M4A ZIP - Better quality, Apple devices"
-                        >
-                          <Download className="w-4 h-4" />
-                          M4A <span className="text-zinc-400">(Apple)</span>
-                        </button>
-                      )}
-                      {album?.zipWAV && (
-                        <button
-                          onClick={() => handleDownloadAlbum('WAV')}
-                          className="px-4 py-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-lg transition-all text-sm flex items-center gap-2"
-                          title="Download WAV ZIP - Lossless quality, largest size"
-                        >
-                          <Download className="w-4 h-4" />
-                          WAV <span className="text-zinc-400">(lossless)</span>
-                        </button>
+                      {(album?.zipMP3 || album?.zipM4A || album?.zipWAV) && (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button className="px-4 py-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-lg transition-all text-sm flex items-center gap-2">
+                              <Archive className="w-4 h-4" />
+                              Download Album
+                              <ChevronDown className="w-4 h-4" />
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="start" className="bg-zinc-900 border-zinc-800">
+                            {album?.zipMP3 && (
+                              <DropdownMenuItem onClick={() => handleDownloadAlbum('MP3')} className="cursor-pointer">
+                                <Download className="w-4 h-4" />
+                                <span>MP3 ZIP <span className="text-zinc-400">(universal)</span></span>
+                              </DropdownMenuItem>
+                            )}
+                            {album?.zipM4A && (
+                              <DropdownMenuItem onClick={() => handleDownloadAlbum('M4A')} className="cursor-pointer">
+                                <Download className="w-4 h-4" />
+                                <span>M4A ZIP <span className="text-zinc-400">(Apple)</span></span>
+                              </DropdownMenuItem>
+                            )}
+                            {album?.zipWAV && (
+                              <DropdownMenuItem onClick={() => handleDownloadAlbum('WAV')} className="cursor-pointer">
+                                <Download className="w-4 h-4" />
+                                <span>WAV ZIP <span className="text-zinc-400">(lossless)</span></span>
+                              </DropdownMenuItem>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       )}
                       {allTracks.length > 0 && (
                         <>
@@ -352,59 +359,71 @@ export function AlbumView() {
                       >
                         <Play className="w-5 h-5" fill="currentColor" />
                       </button>
-                      {catalogTrack?.mp3 && (
-                        <button
-                          onClick={(e) => {
-                            e.preventDefault();
-                            const a = document.createElement('a');
-                            a.href = catalogTrack.mp3!;
-                            a.download = `${trackData.name}.mp3`;
-                            document.body.appendChild(a);
-                            a.click();
-                            document.body.removeChild(a);
-                          }}
-                          className="px-2 py-1 text-xs bg-white/10 hover:bg-white/20 rounded transition-colors flex items-center gap-1"
-                          title="Download MP3 - Universal compatibility"
-                        >
-                          <Download className="w-3 h-3" />
-                          MP3
-                        </button>
-                      )}
-                      {catalogTrack?.m4a && (
-                        <button
-                          onClick={(e) => {
-                            e.preventDefault();
-                            const a = document.createElement('a');
-                            a.href = catalogTrack.m4a!;
-                            a.download = `${trackData.name}.m4a`;
-                            document.body.appendChild(a);
-                            a.click();
-                            document.body.removeChild(a);
-                          }}
-                          className="px-2 py-1 text-xs bg-white/10 hover:bg-white/20 rounded transition-colors flex items-center gap-1"
-                          title="Download M4A - Better quality, Apple devices"
-                        >
-                          <Download className="w-3 h-3" />
-                          M4A
-                        </button>
-                      )}
-                      {catalogTrack?.wav && catalog && (
-                        <button
-                          onClick={(e) => {
-                            e.preventDefault();
-                            const a = document.createElement('a');
-                            a.href = constructGitUrl(catalogTrack.wav!, catalog);
-                            a.download = `${trackData.name}.wav`;
-                            document.body.appendChild(a);
-                            a.click();
-                            document.body.removeChild(a);
-                          }}
-                          className="px-2 py-1 text-xs bg-white/10 hover:bg-white/20 rounded transition-colors flex items-center gap-1"
-                          title="Download WAV - Lossless quality"
-                        >
-                          <Download className="w-3 h-3" />
-                          WAV
-                        </button>
+                      {(catalogTrack?.mp3 || catalogTrack?.m4a || catalogTrack?.wav) && (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button
+                              onClick={(e) => e.preventDefault()}
+                              className="p-2 text-zinc-400 hover:text-white transition-colors"
+                              title="Download track"
+                            >
+                              <Download className="w-5 h-5" />
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="bg-zinc-900 border-zinc-800">
+                            {catalogTrack?.mp3 && (
+                              <DropdownMenuItem
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  const a = document.createElement('a');
+                                  a.href = catalogTrack.mp3!;
+                                  a.download = `${trackData.name}.mp3`;
+                                  document.body.appendChild(a);
+                                  a.click();
+                                  document.body.removeChild(a);
+                                }}
+                                className="cursor-pointer"
+                              >
+                                <Download className="w-3 h-3" />
+                                <span className="text-xs">MP3</span>
+                              </DropdownMenuItem>
+                            )}
+                            {catalogTrack?.m4a && (
+                              <DropdownMenuItem
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  const a = document.createElement('a');
+                                  a.href = catalogTrack.m4a!;
+                                  a.download = `${trackData.name}.m4a`;
+                                  document.body.appendChild(a);
+                                  a.click();
+                                  document.body.removeChild(a);
+                                }}
+                                className="cursor-pointer"
+                              >
+                                <Download className="w-3 h-3" />
+                                <span className="text-xs">M4A</span>
+                              </DropdownMenuItem>
+                            )}
+                            {catalogTrack?.wav && catalog && (
+                              <DropdownMenuItem
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  const a = document.createElement('a');
+                                  a.href = constructGitUrl(catalogTrack.wav!, catalog);
+                                  a.download = `${trackData.name}.wav`;
+                                  document.body.appendChild(a);
+                                  a.click();
+                                  document.body.removeChild(a);
+                                }}
+                                className="cursor-pointer"
+                              >
+                                <Download className="w-3 h-3" />
+                                <span className="text-xs">WAV</span>
+                              </DropdownMenuItem>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       )}
                     </div>
                   </div>

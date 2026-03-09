@@ -2,9 +2,15 @@ import React, { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router';
 import { getCatalog, getRawFileUrl, constructGitUrl, CatalogTrack, Catalog } from '@/app/services/github';
 import { usePlayer, Track } from '@/app/contexts/PlayerContext';
-import { ChevronLeft, Play, Download, Music } from 'lucide-react';
+import { ChevronLeft, Play, Download, Music, ChevronDown } from 'lucide-react';
 import Markdown from 'react-markdown';
 import { stripHtmlFromMarkdown } from '@/app/utils/markdown';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/app/components/ui/dropdown-menu';
 
 export function TrackView() {
   const { collectionName, albumName, trackName } = useParams<{ 
@@ -182,38 +188,35 @@ export function TrackView() {
                 <Play className="w-5 h-5 text-white" fill="currentColor" />
               </button>
               
-              {track?.mp3 && (
-                <button
-                  onClick={() => handleDownload('mp3')}
-                  className="px-4 py-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-lg transition-all text-sm flex items-center gap-2"
-                  title="Download MP3 - Universal compatibility, smaller size"
-                >
-                  <Download className="w-4 h-4" />
-                  MP3 <span className="text-zinc-400">(universal)</span>
-                </button>
-              )}
-              
-              {track?.m4a && (
-                <button
-                  onClick={() => handleDownload('m4a')}
-                  className="px-4 py-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-lg transition-all text-sm flex items-center gap-2"
-                  title="Download M4A - Better quality, Apple devices"
-                >
-                  <Download className="w-4 h-4" />
-                  M4A <span className="text-zinc-400">(Apple)</span>
-                </button>
-              )}
-              
-              {track?.wav && (
-                <button
-                  onClick={() => handleDownload('wav')}
-                  className="px-4 py-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-lg transition-all text-sm flex items-center gap-2"
-                  title="Download WAV - Lossless quality, largest size"
-                >
-                  <Download className="w-4 h-4" />
-                  WAV <span className="text-zinc-400">(lossless)</span>
-                </button>
-              )}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="px-4 py-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-lg transition-all text-sm flex items-center gap-2">
+                    <Download className="w-4 h-4" />
+                    Download
+                    <ChevronDown className="w-4 h-4" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="bg-zinc-900 border-zinc-800">
+                  {track?.mp3 && (
+                    <DropdownMenuItem onClick={() => handleDownload('mp3')} className="cursor-pointer">
+                      <Download className="w-4 h-4" />
+                      <span>MP3 <span className="text-zinc-400">(universal)</span></span>
+                    </DropdownMenuItem>
+                  )}
+                  {track?.m4a && (
+                    <DropdownMenuItem onClick={() => handleDownload('m4a')} className="cursor-pointer">
+                      <Download className="w-4 h-4" />
+                      <span>M4A <span className="text-zinc-400">(Apple)</span></span>
+                    </DropdownMenuItem>
+                  )}
+                  {track?.wav && (
+                    <DropdownMenuItem onClick={() => handleDownload('wav')} className="cursor-pointer">
+                      <Download className="w-4 h-4" />
+                      <span>WAV <span className="text-zinc-400">(lossless)</span></span>
+                    </DropdownMenuItem>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           )}
         </div>
