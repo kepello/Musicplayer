@@ -235,6 +235,54 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     }
   }, [currentTrack, isPlaying]);
 
+  // Handle audio load errors - try alternative formats
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    const handleError = async () => {
+      if (!currentTrack) return;
+      
+      console.error('Audio failed to load:', audio.error);
+      console.log('Attempting to find alternative format...');
+      
+      // Try to fetch the catalog to get WAV fallback
+      try {
+        const response = await fetch('https://raw.githubusercontent.com/kepello/music/main/catalog.json');
+        if (response.ok) {
+          const catalog = await response.json();
+          
+          // Find the track in the catalog
+          for (const collection of catalog.collections) {
+            const track = collection.tracks.find((t: any) => t.path === currentTrack.path);
+            if (track && track.wav) {
+              // Construct WAV URL
+              const { owner, repo, branch } = catalog.repository;
+              const wavUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${track.wav}`;
+              console.log('Trying WAV fallback:', wavUrl);
+              
+              // Update the current track URL and try again
+              if (wavUrl !== currentTrack.url) {
+                audio.src = wavUrl;
+                audio.play().catch(err => {
+                  console.error('WAV fallback also failed:', err);
+                });
+                return;
+              }
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load catalog for fallback:', err);
+      }
+      
+      console.error('No alternative format available');
+    };
+
+    audio.addEventListener('error', handleError);
+    return () => audio.removeEventListener('error', handleError);
+  }, [currentTrack]);
+
   // Handle audio ended
   useEffect(() => {
     const audio = audioRef.current;
