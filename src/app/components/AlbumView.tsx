@@ -19,11 +19,6 @@ export function AlbumView() {
   const [catalog, setCatalog] = useState<Catalog | null>(null);
   const [allTracks, setAllTracks] = useState<Track[]>([]);
   const [loading, setLoading] = useState(true);
-  
-  // Detect device type
-  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-  const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-  const isAndroid = /Android/i.test(navigator.userAgent);
 
   useEffect(() => {
     async function loadAlbum() {
@@ -233,89 +228,42 @@ export function AlbumView() {
                     <Shuffle className="w-5 h-5 text-white" />
                   </button>
                   
-                  {(album?.zipM4A || album?.zipMP3 || album?.playlistM4A || album?.playlistMP3 || allTracks.length > 0) && (
-                    <>
-                  {/* Mobile: Prioritize playlist (opens in native music app) */}
-                  {isMobile && allTracks.length > 0 && (
-                    <button
-                      onClick={() => handleDownloadPlaylist(isIOS ? 'M4A' : 'MP3')}
-                      className="p-3 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full transition-all"
-                      title={isIOS ? "Opens in Apple Music" : isAndroid ? "Opens in your music player" : "Download playlist"}
-                    >
-                      <List className="w-5 h-5 text-white" />
-                    </button>
-                  )}
-                  
-                  {/* Desktop: Show both M4A and MP3 options */}
-                  {!isMobile && (
-                    <>
-                      {(album?.zipMP3 || album?.zipM4A || album?.zipWAV) && (
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <button className="px-4 py-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-lg transition-all text-sm flex items-center gap-2">
-                              <Archive className="w-4 h-4" />
-                              Download Album
-                              <ChevronDown className="w-4 h-4" />
-                            </button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="start" className="bg-zinc-900 border-zinc-800 text-white">
-                            {album?.zipMP3 && (
-                              <DropdownMenuItem onClick={() => handleDownloadAlbum('MP3')} className="cursor-pointer hover:bg-zinc-800 text-white">
-                                <Download className="w-4 h-4" />
-                                <span>MP3 ZIP <span className="text-zinc-500">(universal)</span></span>
-                              </DropdownMenuItem>
-                            )}
-                            {album?.zipM4A && (
-                              <DropdownMenuItem onClick={() => handleDownloadAlbum('M4A')} className="cursor-pointer hover:bg-zinc-800 text-white">
-                                <Download className="w-4 h-4" />
-                                <span>M4A ZIP <span className="text-zinc-500">(Apple)</span></span>
-                              </DropdownMenuItem>
-                            )}
-                            {album?.zipWAV && (
-                              <DropdownMenuItem onClick={() => handleDownloadAlbum('WAV')} className="cursor-pointer hover:bg-zinc-800 text-white">
-                                <Download className="w-4 h-4" />
-                                <span>WAV ZIP <span className="text-zinc-500">(lossless)</span></span>
-                              </DropdownMenuItem>
-                            )}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      )}
-                      {allTracks.length > 0 && (
-                        <>
-                          {album?.playlistM4A && (
-                            <button
-                              onClick={() => handleDownloadPlaylist('M4A')}
-                              className="p-3 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full transition-all"
-                              title="Download M4A Playlist"
-                            >
-                              <List className="w-5 h-5 text-white" />
-                            </button>
-                          )}
-                          {album?.playlistMP3 && (
-                            <button
-                              onClick={() => handleDownloadPlaylist('MP3')}
-                              className="p-3 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full transition-all"
-                              title="Download MP3 Playlist"
-                            >
-                              <List className="w-5 h-5 text-white" />
-                            </button>
-                          )}
-                        </>
-                      )}
-                    </>
-                  )}
-                  
-                  {/* Mobile: Also show zip as secondary option */}
-                  {isMobile && (album?.zipM4A || album?.zipMP3) && (
-                    <button
-                      onClick={() => handleDownloadAlbum(album?.zipM4A && isIOS ? 'M4A' : 'MP3')}
-                      className="p-3 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full transition-all"
-                      title="Download all files as ZIP"
-                    >
-                      <Download className="w-5 h-5 text-white" />
-                    </button>
-                  )}
-                    </>
+                  {(album?.zipM4A || album?.zipMP3 || album?.zipWAV || album?.playlistM4A || album?.playlistMP3 || allTracks.length > 0) && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button className="px-4 py-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-lg transition-all text-sm flex items-center gap-2">
+                          <Download className="w-4 h-4" />
+                          Download
+                          <ChevronDown className="w-4 h-4" />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start" className="bg-zinc-900 border-zinc-800 text-white">
+                        {album?.zipMP3 && (
+                          <DropdownMenuItem onClick={() => handleDownloadAlbum('MP3')} className="cursor-pointer hover:bg-zinc-800 text-white">
+                            <Archive className="w-4 h-4" />
+                            <span>MP3 ZIP <span className="text-zinc-500">(universal)</span></span>
+                          </DropdownMenuItem>
+                        )}
+                        {album?.zipM4A && (
+                          <DropdownMenuItem onClick={() => handleDownloadAlbum('M4A')} className="cursor-pointer hover:bg-zinc-800 text-white">
+                            <Archive className="w-4 h-4" />
+                            <span>M4A ZIP <span className="text-zinc-500">(Apple)</span></span>
+                          </DropdownMenuItem>
+                        )}
+                        {album?.zipWAV && (
+                          <DropdownMenuItem onClick={() => handleDownloadAlbum('WAV')} className="cursor-pointer hover:bg-zinc-800 text-white">
+                            <Archive className="w-4 h-4" />
+                            <span>WAV ZIP <span className="text-zinc-500">(lossless)</span></span>
+                          </DropdownMenuItem>
+                        )}
+                        {allTracks.length > 0 && (album?.playlistMP3 || album?.playlistM4A) && (
+                          <DropdownMenuItem onClick={() => handleDownloadPlaylist('MP3')} className="cursor-pointer hover:bg-zinc-800 text-white">
+                            <List className="w-4 h-4" />
+                            <span>Playlist <span className="text-zinc-500">(streaming)</span></span>
+                          </DropdownMenuItem>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   )}
                 </div>
               )}
