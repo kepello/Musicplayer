@@ -196,23 +196,23 @@ export function TrackView() {
                     <ChevronDown className="w-4 h-4" />
                   </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="bg-zinc-900 border-zinc-800">
+                <DropdownMenuContent align="start" className="bg-zinc-900 border-zinc-800 text-white">
                   {track?.mp3 && (
-                    <DropdownMenuItem onClick={() => handleDownload('mp3')} className="cursor-pointer">
+                    <DropdownMenuItem onClick={() => handleDownload('mp3')} className="cursor-pointer hover:bg-zinc-800 text-white">
                       <Download className="w-4 h-4" />
-                      <span>MP3 <span className="text-zinc-400">(universal)</span></span>
+                      <span>MP3 <span className="text-zinc-500">(universal)</span></span>
                     </DropdownMenuItem>
                   )}
                   {track?.m4a && (
-                    <DropdownMenuItem onClick={() => handleDownload('m4a')} className="cursor-pointer">
+                    <DropdownMenuItem onClick={() => handleDownload('m4a')} className="cursor-pointer hover:bg-zinc-800 text-white">
                       <Download className="w-4 h-4" />
-                      <span>M4A <span className="text-zinc-400">(Apple)</span></span>
+                      <span>M4A <span className="text-zinc-500">(Apple)</span></span>
                     </DropdownMenuItem>
                   )}
                   {track?.wav && (
-                    <DropdownMenuItem onClick={() => handleDownload('wav')} className="cursor-pointer">
+                    <DropdownMenuItem onClick={() => handleDownload('wav')} className="cursor-pointer hover:bg-zinc-800 text-white">
                       <Download className="w-4 h-4" />
-                      <span>WAV <span className="text-zinc-400">(lossless)</span></span>
+                      <span>WAV <span className="text-zinc-500">(lossless)</span></span>
                     </DropdownMenuItem>
                   )}
                 </DropdownMenuContent>
