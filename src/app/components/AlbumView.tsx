@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router';
-import { getCatalog, getRawFileUrl, CatalogAlbum } from '@/app/services/github';
+import { getCatalog, getRawFileUrl, constructGitUrl, CatalogAlbum, Catalog } from '@/app/services/github';
 import { ChevronLeft, Music, Play, Download, List, Shuffle } from 'lucide-react';
 import Markdown from 'react-markdown';
 import { stripHtmlFromMarkdown } from '@/app/utils/markdown';
@@ -10,6 +10,7 @@ export function AlbumView() {
   const { collectionName, albumName } = useParams<{ collectionName: string; albumName: string }>();
   const { playPlaylist } = usePlayer();
   const [album, setAlbum] = useState<CatalogAlbum | null>(null);
+  const [catalog, setCatalog] = useState<Catalog | null>(null);
   const [allTracks, setAllTracks] = useState<Track[]>([]);
   const [loading, setLoading] = useState(true);
   
@@ -23,16 +24,18 @@ export function AlbumView() {
       if (!collectionName || !albumName) return;
       
       setLoading(true);
-      const catalog = await getCatalog();
+      const catalogData = await getCatalog();
       
-      if (!catalog) {
+      if (!catalogData) {
         setLoading(false);
         return;
       }
       
+      setCatalog(catalogData);
+      
       // Since collections ARE albums, we're looking at a collection
       // The albumName in the route is actually a collection name
-      const foundAlbum = catalog.collections.find(c => c.name === albumName);
+      const foundAlbum = catalogData.collections.find(c => c.name === albumName);
       if (!foundAlbum) {
         setLoading(false);
         return;
@@ -318,6 +321,8 @@ export function AlbumView() {
         ) : (
           <div className="space-y-2">
             {allTracks.map((trackData, index) => {
+              const catalogTrack = album?.tracks.find(t => t.name === trackData.name);
+              
               return (
                 <div key={trackData.path} className="bg-zinc-900 rounded-lg p-4 hover:bg-zinc-800 transition-colors">
                   <div className="flex items-center gap-4">
@@ -344,42 +349,57 @@ export function AlbumView() {
                       >
                         <Play className="w-5 h-5" fill="currentColor" />
                       </button>
-                      <button
-                        onClick={async (e) => {
-                          e.preventDefault();
-                          // Generate single-track playlist
-                          const displayName = trackData.title || trackData.name;
-                          const playlistContent = `#EXTM3U\n#EXTENC:UTF-8\n\n#EXTINF:-1,${displayName}\n${trackData.url}\n`;
-                          const blob = new Blob([playlistContent], { type: 'audio/x-mpegurl' });
-                          const url = URL.createObjectURL(blob);
-                          const a = document.createElement('a');
-                          a.href = url;
-                          a.download = `${trackData.name}.m3u8`;
-                          document.body.appendChild(a);
-                          a.click();
-                          document.body.removeChild(a);
-                          URL.revokeObjectURL(url);
-                        }}
-                        className="p-2 text-zinc-400 hover:text-white transition-colors"
-                        title="Download Playlist"
-                      >
-                        <List className="w-5 h-5" />
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault();
-                          const a = document.createElement('a');
-                          a.href = trackData.url;
-                          a.download = `${trackData.name}.mp3`;
-                          document.body.appendChild(a);
-                          a.click();
-                          document.body.removeChild(a);
-                        }}
-                        className="p-2 text-zinc-400 hover:text-white transition-colors"
-                        title="Download MP3"
-                      >
-                        <Download className="w-5 h-5" />
-                      </button>
+                      {catalogTrack?.mp3 && (
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            const a = document.createElement('a');
+                            a.href = catalogTrack.mp3!;
+                            a.download = `${trackData.name}.mp3`;
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                          }}
+                          className="px-2 py-1 text-xs bg-white/10 hover:bg-white/20 rounded transition-colors"
+                          title="Download MP3 - Universal compatibility"
+                        >
+                          MP3
+                        </button>
+                      )}
+                      {catalogTrack?.m4a && (
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            const a = document.createElement('a');
+                            a.href = catalogTrack.m4a!;
+                            a.download = `${trackData.name}.m4a`;
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                          }}
+                          className="px-2 py-1 text-xs bg-white/10 hover:bg-white/20 rounded transition-colors"
+                          title="Download M4A - Better quality, Apple devices"
+                        >
+                          M4A
+                        </button>
+                      )}
+                      {catalogTrack?.wav && catalog && (
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            const a = document.createElement('a');
+                            a.href = constructGitUrl(catalogTrack.wav!, catalog);
+                            a.download = `${trackData.name}.wav`;
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                          }}
+                          className="px-2 py-1 text-xs bg-white/10 hover:bg-white/20 rounded transition-colors"
+                          title="Download WAV - Lossless quality"
+                        >
+                          WAV
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>

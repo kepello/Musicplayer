@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router';
-import { getCatalog, getRawFileUrl, CatalogCollection, CatalogTrack } from '@/app/services/github';
+import { getCatalog, getRawFileUrl, constructGitUrl, CatalogCollection, CatalogTrack, Catalog } from '@/app/services/github';
 import { ChevronLeft, Music, Play, Download, List, Archive } from 'lucide-react';
 import Markdown from 'react-markdown';
 import { stripHtmlFromMarkdown } from '@/app/utils/markdown';
@@ -10,6 +10,7 @@ export function Collection() {
   const { collectionName } = useParams<{ collectionName: string }>();
   const { playPlaylist } = usePlayer();
   const [collection, setCollection] = useState<CatalogCollection | null>(null);
+  const [catalog, setCatalog] = useState<Catalog | null>(null);
   const [allTracks, setAllTracks] = useState<Track[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -18,15 +19,17 @@ export function Collection() {
       if (!collectionName) return;
       
       setLoading(true);
-      const catalog = await getCatalog();
+      const catalogData = await getCatalog();
       
-      if (!catalog) {
+      if (!catalogData) {
         setLoading(false);
         return;
       }
       
+      setCatalog(catalogData);
+      
       // Find the collection in the catalog
-      const foundCollection = catalog.collections.find(c => c.name === collectionName);
+      const foundCollection = catalogData.collections.find(c => c.name === collectionName);
       
       if (!foundCollection) {
         setLoading(false);
@@ -249,43 +252,57 @@ export function Collection() {
                       >
                         <Play className="w-5 h-5" fill="currentColor" />
                       </button>
-                      <button
-                        onClick={async (e) => {
-                          e.preventDefault();
-                          // Download track playlist if available, otherwise generate it
-                          if (catalogTrack?.playlist) {
+                      {catalogTrack?.mp3 && (
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
                             const a = document.createElement('a');
-                            a.href = getRawFileUrl(catalogTrack.playlist);
-                            a.download = `${trackData.name}.m3u8`;
+                            a.href = catalogTrack.mp3!;
+                            a.download = `${trackData.name}.mp3`;
                             document.body.appendChild(a);
                             a.click();
                             document.body.removeChild(a);
-                          } else if (catalogTrack?.mp3 || catalogTrack?.m4a) {
-                            // Generate track playlist on-the-fly
-                            let playlistContent = '#EXTM3U\n#EXTENC:UTF-8\n';
-                            if (catalogTrack.m4a) {
-                              playlistContent += `\n#EXTINF:-1,${trackData.name} (M4A)\n${catalogTrack.m4a}`;
-                            }
-                            if (catalogTrack.mp3) {
-                              playlistContent += `\n#EXTINF:-1,${trackData.name} (MP3)\n${catalogTrack.mp3}`;
-                            }
-                            playlistContent += '\n';
-                            const blob = new Blob([playlistContent], { type: 'audio/x-mpegurl' });
-                            const url = URL.createObjectURL(blob);
+                          }}
+                          className="px-2 py-1 text-xs bg-white/10 hover:bg-white/20 rounded transition-colors"
+                          title="Download MP3 - Universal compatibility"
+                        >
+                          MP3
+                        </button>
+                      )}
+                      {catalogTrack?.m4a && (
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
                             const a = document.createElement('a');
-                            a.href = url;
-                            a.download = `${trackData.name}.m3u8`;
+                            a.href = catalogTrack.m4a!;
+                            a.download = `${trackData.name}.m4a`;
                             document.body.appendChild(a);
                             a.click();
                             document.body.removeChild(a);
-                            URL.revokeObjectURL(url);
-                          }
-                        }}
-                        className="p-2 text-zinc-400 hover:text-white transition-colors"
-                        title="Download track playlist"
-                      >
-                        <Download className="w-5 h-5" />
-                      </button>
+                          }}
+                          className="px-2 py-1 text-xs bg-white/10 hover:bg-white/20 rounded transition-colors"
+                          title="Download M4A - Better quality, Apple devices"
+                        >
+                          M4A
+                        </button>
+                      )}
+                      {catalogTrack?.wav && catalog && (
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            const a = document.createElement('a');
+                            a.href = constructGitUrl(catalogTrack.wav!, catalog);
+                            a.download = `${trackData.name}.wav`;
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                          }}
+                          className="px-2 py-1 text-xs bg-white/10 hover:bg-white/20 rounded transition-colors"
+                          title="Download WAV - Lossless quality"
+                        >
+                          WAV
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
