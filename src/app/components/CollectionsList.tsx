@@ -43,12 +43,20 @@ export function CollectionsList() {
         
         for (const track of sortedTracks) {
           if (track.mp3 || track.m4a || track.wav) {
+            const trackUrl = track.mp3 || track.m4a || (track.wav ? getRawFileUrl(track.wav) : '');
+            console.log('Track URL constructed:', {
+              trackName: track.name,
+              mp3: track.mp3,
+              m4a: track.m4a,
+              wav: track.wav,
+              finalUrl: trackUrl
+            });
             tracks.push({
               path: track.path,
               name: track.name,
               title: track.title,
               trackNumber: track.trackNumber,
-              url: track.mp3 || track.m4a || (track.wav ? getRawFileUrl(track.wav) : ''),  // MP3/M4A are full URLs, WAV needs construction
+              url: trackUrl,
               collection: collection.name,
             });
           }

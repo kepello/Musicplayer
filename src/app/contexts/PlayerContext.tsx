@@ -221,8 +221,17 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   // Auto-play when track changes
   useEffect(() => {
     if (currentTrack && audioRef.current && isPlaying) {
+      console.log('Loading track URL:', currentTrack.url);
+      console.log('Track details:', {
+        name: currentTrack.name,
+        path: currentTrack.path,
+        url: currentTrack.url
+      });
       audioRef.current.src = currentTrack.url;
-      audioRef.current.play();
+      audioRef.current.play().catch(error => {
+        console.error('Error playing track:', error);
+        console.error('Failed URL:', currentTrack.url);
+      });
     }
   }, [currentTrack, isPlaying]);
 
