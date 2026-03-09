@@ -94,15 +94,15 @@ export function CollectionsList() {
             className="group block relative"
           >
             <div className="bg-zinc-900 rounded-lg overflow-hidden hover:bg-zinc-800 transition-colors">
-              <div className="aspect-square bg-zinc-800 flex items-center justify-center relative overflow-hidden">
+              <div className="aspect-[4/3] bg-zinc-800 flex items-center justify-center relative overflow-hidden">
                 <CollectionCover collection={collection} />
               </div>
-              <div className="p-4 relative">
-                <h3 className="font-medium group-hover:text-white transition-colors">
+              <div className="p-4 relative pb-16">
+                <h3 className="font-medium group-hover:text-white transition-colors mb-3">
                   {collection.name}
                 </h3>
-                {/* Buttons in bottom right of text area */}
-                <div className="absolute bottom-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                {/* Buttons in bottom of card area */}
+                <div className="absolute bottom-3 left-3 right-3 flex flex-wrap gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button
                     onClick={(e) => {
                       e.preventDefault();
@@ -112,10 +112,11 @@ export function CollectionsList() {
                       }
                     }}
                     disabled={tracks.length === 0}
-                    className="p-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-full transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-3 py-1.5 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm flex items-center gap-1.5"
                     title="Play Collection"
                   >
-                    <Play className="w-4 h-4 text-white" fill="currentColor" />
+                    <Play className="w-3.5 h-3.5 text-white" fill="currentColor" />
+                    <span className="text-white">Play</span>
                   </button>
                   <button
                     onClick={(e) => {
@@ -126,10 +127,11 @@ export function CollectionsList() {
                       }
                     }}
                     disabled={tracks.length === 0}
-                    className="p-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-full transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-3 py-1.5 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm flex items-center gap-1.5"
                     title="Shuffle Collection"
                   >
-                    <Shuffle className="w-4 h-4 text-white" />
+                    <Shuffle className="w-3.5 h-3.5 text-white" />
+                    <span className="text-white">Shuffle</span>
                   </button>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -139,10 +141,11 @@ export function CollectionsList() {
                           e.stopPropagation();
                         }}
                         disabled={tracks.length === 0}
-                        className="p-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-full transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="px-3 py-1.5 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm flex items-center gap-1.5"
                         title="Download"
                       >
-                        <Download className="w-4 h-4 text-white" />
+                        <Download className="w-3.5 h-3.5 text-white" />
+                        <span className="text-white">Download</span>
                       </button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="bg-zinc-900 border-zinc-800 text-white">
