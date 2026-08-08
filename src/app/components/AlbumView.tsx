@@ -192,7 +192,10 @@ export function AlbumView() {
             )}
             <div className="flex-1 p-6">
               <div className="text-sm text-zinc-400 mb-2">{collectionName}</div>
-              <h1 className="text-4xl font-bold mb-4">{albumName}</h1>
+              <h1 className="text-4xl font-bold mb-1">{album?.title || albumName}</h1>
+              {album?.artist && (
+                <p className="text-zinc-400 mb-4">{album.artist}</p>
+              )}
               {album?.readme && (
                 <div className="text-zinc-300 [&>p]:mb-4 columns-1 lg:columns-2 lg:gap-8">
                   <Markdown skipHtml>{stripHtmlFromMarkdown(album.readme)}</Markdown>

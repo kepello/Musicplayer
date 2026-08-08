@@ -105,7 +105,12 @@ export function Collection() {
             )}
             <div className="flex-1 p-6">
               <div className="flex items-start justify-between mb-4">
-                <h1 className="text-4xl font-bold">{collectionName}</h1>
+                <div>
+                  <h1 className="text-4xl font-bold">{collection?.title || collectionName}</h1>
+                  {collection?.artist && (
+                    <p className="text-zinc-400 mt-1">{collection.artist}</p>
+                  )}
+                </div>
                 <div className="flex flex-wrap gap-2 ml-4">
                   <button
                     onClick={() => {

@@ -62,6 +62,7 @@ export interface CatalogTrack {
 export interface CatalogCollection {
   name: string;
   title?: string;   // Display title from ALBUM.json, falls back to name
+  artist?: string;  // Releasing artist name (Carl releases under more than one)
   path: string;
   readme?: string;
   cover?: string;  // Cover image (any reasonable size)

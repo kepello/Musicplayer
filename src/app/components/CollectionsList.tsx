@@ -106,7 +106,7 @@ export function CollectionsList() {
               </div>
               <div className="p-4 relative pb-14">
                 <h3 className="font-medium group-hover:text-white transition-colors mb-3">
-                  {collection.name}
+                  {collection.title || collection.name}
                 </h3>
                 {/* Buttons in bottom of card area */}
                 <div className="absolute bottom-3 left-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
