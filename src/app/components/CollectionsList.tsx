@@ -42,13 +42,12 @@ export function CollectionsList() {
         );
         
         for (const track of sortedTracks) {
-          if (track.mp3 || track.m4a || track.wav) {
-            const trackUrl = track.mp3 || track.m4a || (track.wav ? getRawFileUrl(track.wav) : '');
+          if (track.mp3 || track.m4a) {
+            const trackUrl = track.m4a || track.mp3 || '';
             console.log('Track URL constructed:', {
               trackName: track.name,
               mp3: track.mp3,
               m4a: track.m4a,
-              wav: track.wav,
               finalUrl: trackUrl
             });
             tracks.push({
@@ -157,60 +156,6 @@ export function CollectionsList() {
                       </button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="bg-zinc-900 border-zinc-800 text-white">
-                      {collection.zipMP3 && (
-                        <DropdownMenuItem
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            const a = document.createElement('a');
-                            a.href = collection.zipMP3!;
-                            a.download = `${collection.name}-MP3.zip`;
-                            document.body.appendChild(a);
-                            a.click();
-                            document.body.removeChild(a);
-                          }}
-                          className="cursor-pointer hover:bg-zinc-800 text-white"
-                        >
-                          <Archive className="w-4 h-4" />
-                          <span>MP3 ZIP <span className="text-zinc-500">(universal)</span></span>
-                        </DropdownMenuItem>
-                      )}
-                      {collection.zipM4A && (
-                        <DropdownMenuItem
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            const a = document.createElement('a');
-                            a.href = collection.zipM4A!;
-                            a.download = `${collection.name}-M4A.zip`;
-                            document.body.appendChild(a);
-                            a.click();
-                            document.body.removeChild(a);
-                          }}
-                          className="cursor-pointer hover:bg-zinc-800 text-white"
-                        >
-                          <Archive className="w-4 h-4" />
-                          <span>M4A ZIP <span className="text-zinc-500">(Apple)</span></span>
-                        </DropdownMenuItem>
-                      )}
-                      {collection.zipWAV && (
-                        <DropdownMenuItem
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            const a = document.createElement('a');
-                            a.href = collection.zipWAV!;
-                            a.download = `${collection.name}-WAV.zip`;
-                            document.body.appendChild(a);
-                            a.click();
-                            document.body.removeChild(a);
-                          }}
-                          className="cursor-pointer hover:bg-zinc-800 text-white"
-                        >
-                          <Archive className="w-4 h-4" />
-                          <span>WAV ZIP <span className="text-zinc-500">(lossless)</span></span>
-                        </DropdownMenuItem>
-                      )}
                       {tracks.length > 0 && (
                         <DropdownMenuItem
                           onClick={async (e) => {

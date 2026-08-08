@@ -38,6 +38,13 @@ export interface GitHubContent {
 }
 
 // Catalog types - Simplified structure: Library → Collections (Albums) → Tracks
+// Where a song can be heard off-site. Keys are only present when filled in.
+export interface StreamingLinks {
+  spotify?: string;
+  appleMusic?: string;
+  amazonMusic?: string;
+}
+
 export interface CatalogTrack {
   name: string;
   title?: string;   // Friendly display name
@@ -46,23 +53,22 @@ export interface CatalogTrack {
   readme?: string;  // Full markdown content
   mp3?: string;     // Full URL to GitHub Releases
   m4a?: string;     // Full URL to GitHub Releases
-  wav?: string;     // Relative path to WAV file in git
   playlist?: string; // Relative path to file
   lyrics?: string | null;  // Full text content (not path)
+  streaming?: StreamingLinks;
 }
 
 // Collections are albums - they are the same thing
 export interface CatalogCollection {
   name: string;
+  title?: string;   // Display title from ALBUM.json, falls back to name
   path: string;
   readme?: string;
   cover?: string;  // Cover image (any reasonable size)
-  zipMP3?: string;  // Full URL to MP3 album ZIP
-  zipM4A?: string;  // Full URL to M4A album ZIP
-  zipWAV?: string;  // Full URL to WAV album ZIP
+  released?: string;  // Release date from ALBUM.json
+  streaming?: StreamingLinks;
   playlistMP3?: string;  // Relative path to MP3 playlist
   playlistM4A?: string;  // Relative path to M4A playlist
-  playlistWAV?: string;  // Relative path to WAV playlist
   tracks: CatalogTrack[];
 }
 

@@ -11,6 +11,7 @@ import {
 import Markdown from 'react-markdown';
 import { stripHtmlFromMarkdown } from '@/app/utils/markdown';
 import { usePlayer, Track } from '@/app/contexts/PlayerContext';
+import { StreamingLinks } from '@/app/components/StreamingLinks';
 
 export function AlbumView() {
   const { collectionName, albumName } = useParams<{ collectionName: string; albumName: string }>();
@@ -51,13 +52,13 @@ export function AlbumView() {
       );
       
       const tracks: Track[] = sortedTracks
-        .filter(track => track.mp3 || track.m4a || track.wav)
+        .filter(track => track.mp3 || track.m4a)
         .map(track => ({
           path: track.path,
           name: track.name,
           title: track.title,
           trackNumber: track.trackNumber,
-          url: track.mp3 || track.m4a || (track.wav ? getRawFileUrl(track.wav) : ''),  // MP3/M4A are full URLs, WAV needs construction
+          url: track.m4a || track.mp3 || '',  // Full release URLs
           album: albumName,
           collection: collectionName,
         }));
@@ -69,18 +70,6 @@ export function AlbumView() {
     loadAlbum();
   }, [collectionName, albumName]);
 
-  const handleDownloadAlbum = (format: 'M4A' | 'MP3' | 'WAV') => {
-    const zipUrl = format === 'WAV' ? album?.zipWAV : format === 'M4A' ? album?.zipM4A : album?.zipMP3;
-    if (zipUrl) {
-      const a = document.createElement('a');
-      a.href = zipUrl;  // Already full URL
-      a.download = `${albumName}-${format}.zip`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-    }
-  };
-  
   const generatePlaylist = () => {
     // Generate playlist content dynamically from tracks
     let playlistContent = '#EXTM3U\n#EXTENC:UTF-8\n';
@@ -230,7 +219,7 @@ export function AlbumView() {
                     <span>Shuffle</span>
                   </button>
                   
-                  {(album?.zipM4A || album?.zipMP3 || album?.zipWAV || album?.playlistM4A || album?.playlistMP3 || allTracks.length > 0) && (
+                  {(album?.playlistM4A || album?.playlistMP3 || allTracks.length > 0) && (
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <button className="px-4 py-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-lg transition-all text-sm flex items-center gap-2">
@@ -240,24 +229,6 @@ export function AlbumView() {
                         </button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="start" className="bg-zinc-900 border-zinc-800 text-white">
-                        {album?.zipMP3 && (
-                          <DropdownMenuItem onClick={() => handleDownloadAlbum('MP3')} className="cursor-pointer hover:bg-zinc-800 text-white">
-                            <Archive className="w-4 h-4" />
-                            <span>MP3 ZIP <span className="text-zinc-500">(universal)</span></span>
-                          </DropdownMenuItem>
-                        )}
-                        {album?.zipM4A && (
-                          <DropdownMenuItem onClick={() => handleDownloadAlbum('M4A')} className="cursor-pointer hover:bg-zinc-800 text-white">
-                            <Archive className="w-4 h-4" />
-                            <span>M4A ZIP <span className="text-zinc-500">(Apple)</span></span>
-                          </DropdownMenuItem>
-                        )}
-                        {album?.zipWAV && (
-                          <DropdownMenuItem onClick={() => handleDownloadAlbum('WAV')} className="cursor-pointer hover:bg-zinc-800 text-white">
-                            <Archive className="w-4 h-4" />
-                            <span>WAV ZIP <span className="text-zinc-500">(lossless)</span></span>
-                          </DropdownMenuItem>
-                        )}
                         {allTracks.length > 0 && (album?.playlistMP3 || album?.playlistM4A) && (
                           <DropdownMenuItem onClick={() => handleDownloadPlaylist('MP3')} className="cursor-pointer hover:bg-zinc-800 text-white">
                             <List className="w-4 h-4" />
@@ -267,6 +238,8 @@ export function AlbumView() {
                       </DropdownMenuContent>
                     </DropdownMenu>
                   )}
+
+                  <StreamingLinks links={album?.streaming} />
                 </div>
               )}
             </div>
@@ -309,7 +282,7 @@ export function AlbumView() {
                       >
                         <Play className="w-5 h-5" fill="currentColor" />
                       </button>
-                      {(catalogTrack?.mp3 || catalogTrack?.m4a || catalogTrack?.wav) && (
+                      {(catalogTrack?.mp3 || catalogTrack?.m4a) && (
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <button
@@ -354,23 +327,6 @@ export function AlbumView() {
                               >
                                 <Download className="w-3 h-3" />
                                 <span className="text-xs">M4A</span>
-                              </DropdownMenuItem>
-                            )}
-                            {catalogTrack?.wav && catalog && (
-                              <DropdownMenuItem
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  const a = document.createElement('a');
-                                  a.href = constructGitUrl(catalogTrack.wav!, catalog);
-                                  a.download = `${trackData.name}.wav`;
-                                  document.body.appendChild(a);
-                                  a.click();
-                                  document.body.removeChild(a);
-                                }}
-                                className="cursor-pointer hover:bg-zinc-800 text-white"
-                              >
-                                <Download className="w-3 h-3" />
-                                <span className="text-xs">WAV</span>
                               </DropdownMenuItem>
                             )}
                           </DropdownMenuContent>

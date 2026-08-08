@@ -5,6 +5,7 @@ import { usePlayer, Track } from '@/app/contexts/PlayerContext';
 import { ChevronLeft, Play, Download, Music, ChevronDown } from 'lucide-react';
 import Markdown from 'react-markdown';
 import { stripHtmlFromMarkdown } from '@/app/utils/markdown';
+import { StreamingLinks } from '@/app/components/StreamingLinks';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -67,13 +68,13 @@ export function TrackView() {
       );
       
       const tracks: Track[] = sortedTracks
-        .filter(t => t.mp3 || t.m4a || t.wav)
+        .filter(t => t.mp3 || t.m4a)
         .map(t => ({
           path: t.path,
           name: t.name,
           title: t.title,
           trackNumber: t.trackNumber,
-          url: t.mp3 || t.m4a || (t.wav ? getRawFileUrl(t.wav) : ''),  // MP3/M4A are full URLs, WAV needs construction
+          url: t.m4a || t.mp3 || '',  // Full release URLs
           collection: collectionName,
         }));
       
@@ -85,9 +86,9 @@ export function TrackView() {
   }, [collectionName, albumName, trackName]);
 
   const handlePlay = () => {
-    if (track?.mp3 || track?.m4a || track?.wav) {
+    if (track?.mp3 || track?.m4a) {
       const trackPath = track.path;
-      const url = track.mp3 || track.m4a || (track.wav && catalog ? constructGitUrl(track.wav, catalog) : '');
+      const url = track.m4a || track.mp3 || '';
       
       if (url) {
         playTrack(
@@ -107,18 +108,11 @@ export function TrackView() {
     }
   };
 
-  const handleDownload = (format?: 'mp3' | 'm4a' | 'wav') => {
+  const handleDownload = (format?: 'mp3' | 'm4a') => {
     if (!track) return;
-    
+
     // Download the actual music file
-    if (format === 'wav' && track.wav && catalog) {
-      const a = document.createElement('a');
-      a.href = constructGitUrl(track.wav, catalog);
-      a.download = `${track.name}.wav`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-    } else if ((format === 'mp3' || !format) && track.mp3) {
+    if ((format === 'mp3' || !format) && track.mp3) {
       const a = document.createElement('a');
       a.href = track.mp3;  // Already full URL
       a.download = `${track.name}.mp3`;
@@ -178,7 +172,7 @@ export function TrackView() {
             )}
           </div>
           
-          {(track?.mp3 || track?.m4a || track?.wav) && (
+          {(track?.mp3 || track?.m4a) && (
             <div className="flex flex-wrap gap-3 mb-8">
               <button
                 onClick={handlePlay}
@@ -209,14 +203,10 @@ export function TrackView() {
                       <span>M4A <span className="text-zinc-500">(Apple)</span></span>
                     </DropdownMenuItem>
                   )}
-                  {track?.wav && (
-                    <DropdownMenuItem onClick={() => handleDownload('wav')} className="cursor-pointer hover:bg-zinc-800 text-white">
-                      <Download className="w-4 h-4" />
-                      <span>WAV <span className="text-zinc-500">(lossless)</span></span>
-                    </DropdownMenuItem>
-                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
+
+              <StreamingLinks links={track?.streaming} />
             </div>
           )}
         </div>

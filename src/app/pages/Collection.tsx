@@ -11,6 +11,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/app/components/ui/dropdown-menu';
+import { StreamingLinks } from '@/app/components/StreamingLinks';
 
 export function Collection() {
   const { collectionName } = useParams<{ collectionName: string }>();
@@ -51,13 +52,13 @@ export function Collection() {
       );
       
       const tracks: Track[] = sortedTracks
-        .filter(track => track.mp3 || track.m4a || track.wav)
+        .filter(track => track.mp3 || track.m4a)
         .map(track => ({
           path: track.path,
           name: track.name,
           title: track.title,
           trackNumber: track.trackNumber,
-          url: track.mp3 || track.m4a || (track.wav ? getRawFileUrl(track.wav) : ''),  // MP3/M4A are full URLs, WAV needs construction
+          url: track.m4a || track.mp3 || '',  // Full release URLs
           collection: collectionName,
         }));
       
@@ -132,7 +133,7 @@ export function Collection() {
                     <Shuffle className="w-4 h-4 text-white" />
                     <span>Shuffle</span>
                   </button>
-                  {(collection?.zipMP3 || collection?.zipM4A || collection?.zipWAV || collection?.playlistMP3 || collection?.playlistM4A || allTracks.length > 0) && (
+                  {(collection?.playlistMP3 || collection?.playlistM4A || allTracks.length > 0) && (
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <button className="px-4 py-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-lg transition-all text-sm flex items-center gap-2">
@@ -142,54 +143,6 @@ export function Collection() {
                         </button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="start" className="bg-zinc-900 border-zinc-800 text-white">
-                        {collection?.zipMP3 && (
-                          <DropdownMenuItem
-                            onClick={() => {
-                              const a = document.createElement('a');
-                              a.href = collection.zipMP3!;
-                              a.download = `${collectionName}-MP3.zip`;
-                              document.body.appendChild(a);
-                              a.click();
-                              document.body.removeChild(a);
-                            }}
-                            className="cursor-pointer hover:bg-zinc-800 text-white"
-                          >
-                            <Archive className="w-4 h-4" />
-                            <span>MP3 ZIP <span className="text-zinc-500">(universal)</span></span>
-                          </DropdownMenuItem>
-                        )}
-                        {collection?.zipM4A && (
-                          <DropdownMenuItem
-                            onClick={() => {
-                              const a = document.createElement('a');
-                              a.href = collection.zipM4A!;
-                              a.download = `${collectionName}-M4A.zip`;
-                              document.body.appendChild(a);
-                              a.click();
-                              document.body.removeChild(a);
-                            }}
-                            className="cursor-pointer hover:bg-zinc-800 text-white"
-                          >
-                            <Archive className="w-4 h-4" />
-                            <span>M4A ZIP <span className="text-zinc-500">(Apple)</span></span>
-                          </DropdownMenuItem>
-                        )}
-                        {collection?.zipWAV && (
-                          <DropdownMenuItem
-                            onClick={() => {
-                              const a = document.createElement('a');
-                              a.href = collection.zipWAV!;
-                              a.download = `${collectionName}-WAV.zip`;
-                              document.body.appendChild(a);
-                              a.click();
-                              document.body.removeChild(a);
-                            }}
-                            className="cursor-pointer hover:bg-zinc-800 text-white"
-                          >
-                            <Archive className="w-4 h-4" />
-                            <span>WAV ZIP <span className="text-zinc-500">(lossless)</span></span>
-                          </DropdownMenuItem>
-                        )}
                         {allTracks.length > 0 && (collection?.playlistMP3 || collection?.playlistM4A) && (
                           <DropdownMenuItem
                             onClick={async () => {
@@ -234,6 +187,8 @@ export function Collection() {
                       </DropdownMenuContent>
                     </DropdownMenu>
                   )}
+
+                  <StreamingLinks links={collection?.streaming} />
                 </div>
               </div>
               {collection?.readme && (
@@ -279,7 +234,7 @@ export function Collection() {
                       >
                         <Play className="w-5 h-5" fill="currentColor" />
                       </button>
-                      {(catalogTrack?.mp3 || catalogTrack?.m4a || catalogTrack?.wav) && (
+                      {(catalogTrack?.mp3 || catalogTrack?.m4a) && (
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <button
@@ -324,23 +279,6 @@ export function Collection() {
                               >
                                 <Download className="w-3 h-3" />
                                 <span className="text-xs">M4A</span>
-                              </DropdownMenuItem>
-                            )}
-                            {catalogTrack?.wav && catalog && (
-                              <DropdownMenuItem
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  const a = document.createElement('a');
-                                  a.href = constructGitUrl(catalogTrack.wav!, catalog);
-                                  a.download = `${trackData.name}.wav`;
-                                  document.body.appendChild(a);
-                                  a.click();
-                                  document.body.removeChild(a);
-                                }}
-                                className="cursor-pointer hover:bg-zinc-800 text-white"
-                              >
-                                <Download className="w-3 h-3" />
-                                <span className="text-xs">WAV</span>
                               </DropdownMenuItem>
                             )}
                           </DropdownMenuContent>

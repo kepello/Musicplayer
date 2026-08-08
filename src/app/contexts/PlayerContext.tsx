@@ -38,6 +38,8 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   const [stopAtEnd, setStopAtEnd] = useState(false);
   const [isShuffle, setIsShuffle] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
+  // Guards the format fallback so m4a -> mp3 -> m4a can't loop forever.
+  const triedFallbackRef = useRef(false);
 
   // Utility function to shuffle array
   const shuffleArray = <T,>(array: T[]): T[] => {
@@ -235,48 +237,45 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     }
   }, [currentTrack, isPlaying]);
 
-  // Handle audio load errors - try alternative formats
+  // Handle audio load errors by switching between the two published formats.
+  // Every track ships as both <name>.m4a and <name>.mp3 in the same release, so
+  // the alternate URL is just an extension swap -- no catalog lookup needed.
+  // (There used to be a WAV fallback here; WAVs no longer live in the repo.)
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
 
-    const handleError = async () => {
+    // Reset per track so a later failure can still retry the alternate format.
+    triedFallbackRef.current = false;
+
+    const handleError = () => {
       if (!currentTrack) return;
-      
-      console.error('Audio failed to load:', audio.error);
-      console.log('Attempting to find alternative format...');
-      
-      // Try to fetch the catalog to get WAV fallback
-      try {
-        const response = await fetch('https://raw.githubusercontent.com/kepello/music/main/catalog.json');
-        if (response.ok) {
-          const catalog = await response.json();
-          
-          // Find the track in the catalog
-          for (const collection of catalog.collections) {
-            const track = collection.tracks.find((t: any) => t.path === currentTrack.path);
-            if (track && track.wav) {
-              // Construct WAV URL
-              const { owner, repo, branch } = catalog.repository;
-              const wavUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${track.wav}`;
-              console.log('Trying WAV fallback:', wavUrl);
-              
-              // Update the current track URL and try again
-              if (wavUrl !== currentTrack.url) {
-                audio.src = wavUrl;
-                audio.play().catch(err => {
-                  console.error('WAV fallback also failed:', err);
-                });
-                return;
-              }
-            }
-          }
-        }
-      } catch (err) {
-        console.error('Failed to load catalog for fallback:', err);
+
+      console.error('Audio failed to load:', audio.error, currentTrack.url);
+
+      if (triedFallbackRef.current) {
+        console.error('Alternate format also failed; giving up on', currentTrack.name);
+        return;
       }
-      
-      console.error('No alternative format available');
+
+      const current = audio.src || currentTrack.url;
+      const alternate = current.endsWith('.m4a')
+        ? current.replace(/\.m4a$/, '.mp3')
+        : current.endsWith('.mp3')
+          ? current.replace(/\.mp3$/, '.m4a')
+          : null;
+
+      if (!alternate || alternate === current) {
+        console.error('No alternate format available for', currentTrack.name);
+        return;
+      }
+
+      triedFallbackRef.current = true;
+      console.log('Retrying with alternate format:', alternate);
+      audio.src = alternate;
+      audio.play().catch(err => {
+        console.error('Alternate format failed to play:', err);
+      });
     };
 
     audio.addEventListener('error', handleError);
