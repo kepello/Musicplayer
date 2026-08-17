@@ -58,7 +58,7 @@ export function AlbumView() {
           name: track.name,
           title: track.title,
           trackNumber: track.trackNumber,
-          url: track.m4a || track.mp3 || '',  // Full release URLs
+          url: track.mp3 || track.m4a || '',  // MP3 first: iOS plays it from the release, M4A does not
           album: albumName,
           collection: collectionName,
         }));

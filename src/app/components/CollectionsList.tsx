@@ -43,7 +43,7 @@ export function CollectionsList() {
         
         for (const track of sortedTracks) {
           if (track.mp3 || track.m4a) {
-            const trackUrl = track.m4a || track.mp3 || '';
+            const trackUrl = track.mp3 || track.m4a || '';
             console.log('Track URL constructed:', {
               trackName: track.name,
               mp3: track.mp3,

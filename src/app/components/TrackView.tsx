@@ -74,7 +74,7 @@ export function TrackView() {
           name: t.name,
           title: t.title,
           trackNumber: t.trackNumber,
-          url: t.m4a || t.mp3 || '',  // Full release URLs
+          url: t.mp3 || t.m4a || '',  // MP3 first: iOS plays it from the release, M4A does not
           collection: collectionName,
         }));
       
@@ -88,7 +88,7 @@ export function TrackView() {
   const handlePlay = () => {
     if (track?.mp3 || track?.m4a) {
       const trackPath = track.path;
-      const url = track.m4a || track.mp3 || '';
+      const url = track.mp3 || track.m4a || '';
       
       if (url) {
         playTrack(
