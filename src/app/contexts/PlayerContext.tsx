@@ -51,7 +51,25 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     return shuffled;
   };
 
+  /**
+   * Start playback synchronously, inside the click that asked for it.
+   *
+   * iOS Safari only grants playback to a play() call made during the user
+   * gesture. The effect below runs after the handler returns, by which point
+   * the gesture is over and iOS rejects it with NotAllowedError -- the element
+   * loads, reports 0:00 and never starts. Desktop browsers do not enforce this,
+   * which is why the same build works on a Mac.
+   */
+  const startPlayback = (url: string) => {
+    const el = audioRef.current;
+    if (!el || !url) return;
+    if (el.src !== url) el.src = url;
+    // Rejection is expected and harmless when a later effect takes over.
+    el.play().catch(() => {});
+  };
+
   const playTrack = (track: Track, contextPlaylist?: Track[], shouldStopAtEnd: boolean = false) => {
+    startPlayback(track.url);
     // If a playlist context is provided, use it; otherwise create a single-track playlist
     const newPlaylist = contextPlaylist || [track];
     const trackIndex = newPlaylist.findIndex(t => t.path === track.path);
@@ -73,6 +91,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
 
   const playPlaylist = (tracks: Track[], startIndex: number = 0, shouldStopAtEnd: boolean = false, shuffle: boolean = false) => {
     if (tracks.length === 0) return;
+    startPlayback((shuffle ? tracks[startIndex] : tracks[Math.min(startIndex, tracks.length - 1)])?.url);
     
     setOriginalPlaylist(tracks);
     
@@ -137,10 +156,14 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     if (audioRef.current) {
       if (isPlaying) {
         audioRef.current.pause();
+        setIsPlaying(false);
       } else {
-        audioRef.current.play();
+        // Only claim to be playing once the browser agrees; an ignored
+        // rejection here leaves the button showing pause while nothing plays.
+        audioRef.current.play()
+          .then(() => setIsPlaying(true))
+          .catch(err => console.error('Play was blocked:', err));
       }
-      setIsPlaying(!isPlaying);
     }
   };
 
@@ -229,11 +252,17 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
         path: currentTrack.path,
         url: currentTrack.url
       });
-      audioRef.current.src = currentTrack.url;
-      audioRef.current.play().catch(error => {
-        console.error('Error playing track:', error);
-        console.error('Failed URL:', currentTrack.url);
-      });
+      // Idempotent: if the gesture already started this track, leave it alone.
+      // Reassigning src would reset it to 0:00.
+      if (audioRef.current.src !== currentTrack.url) {
+        audioRef.current.src = currentTrack.url;
+      }
+      if (audioRef.current.paused) {
+        audioRef.current.play().catch(error => {
+          console.error('Error playing track:', error);
+          console.error('Failed URL:', currentTrack.url);
+        });
+      }
     }
   }, [currentTrack, isPlaying]);
 
@@ -313,7 +342,14 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       }}
     >
       {children}
-      <audio ref={audioRef} />
+      {/*
+        playsInline: iOS otherwise wants to hand audio to its fullscreen player.
+        preload="metadata": iOS ignores "auto" until a gesture anyway, and this
+        avoids fetching whole tracks nobody asked to hear.
+        crossOrigin is deliberately NOT set -- the release assets send no CORS
+        headers, and requesting CORS would make the browser refuse the fetch.
+      */}
+      <audio ref={audioRef} playsInline preload="metadata" />
     </PlayerContext.Provider>
   );
 }
