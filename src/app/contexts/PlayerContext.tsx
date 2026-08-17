@@ -24,6 +24,7 @@ interface PlayerContextType {
   playNext: () => void;
   playPrevious: () => void;
   audioRef: React.RefObject<HTMLAudioElement>;
+  lastError: string | null;
 }
 
 const PlayerContext = createContext<PlayerContextType | undefined>(undefined);
@@ -37,6 +38,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   const [playHistory, setPlayHistory] = useState<Track[]>([]);
   const [stopAtEnd, setStopAtEnd] = useState(false);
   const [isShuffle, setIsShuffle] = useState(false);
+  const [lastError, setLastError] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
   // Guards the format fallback so m4a -> mp3 -> m4a can't loop forever.
   const triedFallbackRef = useRef(false);
@@ -276,10 +278,23 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
 
     // Reset per track so a later failure can still retry the alternate format.
     triedFallbackRef.current = false;
+    setLastError(null);
 
     const handleError = () => {
       if (!currentTrack) return;
 
+      // Surface the real cause on the device that failed. A listener sees 0:00
+      // either way; only the MediaError code says whether the URL was rejected,
+      // the network refused it, or the bytes would not decode.
+      const codes: Record<number, string> = {
+        1: 'ABORTED - load was cancelled',
+        2: 'NETWORK - request failed or was blocked (CORS, redirect, 404)',
+        3: 'DECODE - file downloaded but could not be decoded',
+        4: 'SRC_NOT_SUPPORTED - browser refused this URL or content type',
+      };
+      const code = audio.error?.code ?? 0;
+      const file = (audio.src || currentTrack.url).split('/').pop() || '';
+      setLastError(`${codes[code] || 'unknown'} | ${file}`);
       console.error('Audio failed to load:', audio.error, currentTrack.url);
 
       if (triedFallbackRef.current) {
@@ -300,6 +315,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       }
 
       triedFallbackRef.current = true;
+      setLastError(prev => (prev ? prev + ' -> retrying other format' : prev));
       console.log('Retrying with alternate format:', alternate);
       audio.src = alternate;
       audio.play().catch(err => {
@@ -339,6 +355,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
         playNext,
         playPrevious,
         audioRef,
+        lastError,
       }}
     >
       {children}

@@ -3,7 +3,7 @@ import { usePlayer } from '@/app/contexts/PlayerContext';
 import { Play, Pause, SkipBack, SkipForward, Download, Shuffle } from 'lucide-react';
 
 export function MusicPlayer() {
-  const { currentTrack, isPlaying, isShuffle, togglePlayPause, toggleShuffle, playNext, playPrevious, audioRef } = usePlayer();
+  const { currentTrack, isPlaying, isShuffle, togglePlayPause, toggleShuffle, playNext, playPrevious, audioRef, lastError } = usePlayer();
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
 
@@ -55,6 +55,13 @@ export function MusicPlayer() {
 
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-zinc-900 border-t border-zinc-800 p-3 z-50 supports-[backdrop-filter]:backdrop-blur-lg">
+      {/* A failed load otherwise looks identical to a track that simply has not
+          started: 0:00, no error, nothing to report. Say what went wrong. */}
+      {lastError && (
+        <div className="max-w-screen-xl mx-auto mb-2 px-3 py-2 rounded bg-red-950/80 border border-red-800 text-red-200 text-xs break-all">
+          Playback error: {lastError}
+        </div>
+      )}
       <div className="max-w-screen-xl mx-auto flex items-center gap-4">
         {/* Controls - moved to left */}
         <div className="flex items-center gap-2">
