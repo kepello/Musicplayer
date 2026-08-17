@@ -205,9 +205,14 @@ export async function getCatalog(forceRefresh: boolean = false): Promise<Catalog
   }
 
   try {
-    const catalogUrl = `https://raw.githubusercontent.com/${OWNER}/${REPO}/${BRANCH}/catalog.json`;
+    // Cache-bust the URL itself, the way getRawFileUrl already does. Relying on
+    // cache:'no-cache' alone leaves the catalog able to come from a stale copy,
+    // and a stale catalog is worse than no catalog: it points at asset URLs that
+    // may no longer exist, so every track fails to load with no error a listener
+    // can see -- just 0:00 and silence.
+    const catalogUrl = `https://raw.githubusercontent.com/${OWNER}/${REPO}/${BRANCH}/catalog.json?t=${Date.now()}`;
     const response = await fetch(catalogUrl, {
-      cache: 'no-cache'
+      cache: 'no-store'
     });
 
     if (!response.ok) {
