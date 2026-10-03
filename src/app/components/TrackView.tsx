@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router';
+import React, { useEffect, useRef, useState } from 'react';
+import { Link, useParams, useSearchParams } from 'react-router';
 import { getCatalog, getRawFileUrl, constructGitUrl, CatalogTrack, Catalog } from '@/app/services/github';
 import { usePlayer, Track } from '@/app/contexts/PlayerContext';
 import { ChevronLeft, Play, Download, Music, ChevronDown, Share2 } from 'lucide-react';
@@ -19,6 +19,8 @@ export function TrackView() {
     albumName?: string;
     trackName: string;
   }>();
+  const [searchParams] = useSearchParams();
+  const autoDownloadDone = useRef(false);
   const { playTrack, currentTrack, isPlaying } = usePlayer();
   const [track, setTrack] = useState<CatalogTrack | null>(null);
   const [catalog, setCatalog] = useState<Catalog | null>(null);
@@ -164,7 +166,22 @@ export function TrackView() {
   
   const backLink = `/collection/${encodeURIComponent(collectionName!)}`;
   const backText = collectionName;
-  const trackPageUrl = window.location.href;
+  const trackPageUrl = `${window.location.origin}${window.location.pathname}`;
+  const mp3ShareUrl = `${trackPageUrl}?download=mp3`;
+  const m4aShareUrl = `${trackPageUrl}?download=m4a`;
+  const autoDownloadFormat = searchParams.get('download');
+  const autoDownloadUrl = autoDownloadFormat === 'mp3' ? mp3DownloadUrl : autoDownloadFormat === 'm4a' ? m4aDownloadUrl : undefined;
+
+  useEffect(() => {
+    if (!autoDownloadUrl || autoDownloadDone.current) return;
+    autoDownloadDone.current = true;
+    const a = document.createElement('a');
+    a.href = autoDownloadUrl;
+    a.download = `${track?.name}.${autoDownloadFormat}`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }, [autoDownloadUrl, autoDownloadFormat, track?.name]);
 
   if (loading) {
     return (
@@ -259,13 +276,13 @@ export function TrackView() {
                     <span>This page (link)</span>
                   </DropdownMenuItem>
                   {mp3DownloadUrl && (
-                    <DropdownMenuItem onClick={() => handleShare(mp3DownloadUrl, `${track.title || track.name} (MP3)`)} className="cursor-pointer hover:bg-zinc-800 text-white">
+                    <DropdownMenuItem onClick={() => handleShare(mp3ShareUrl, `${track.title || track.name} (MP3)`)} className="cursor-pointer hover:bg-zinc-800 text-white">
                       <Download className="w-4 h-4" />
                       <span>MP3 download (link)</span>
                     </DropdownMenuItem>
                   )}
                   {m4aDownloadUrl && (
-                    <DropdownMenuItem onClick={() => handleShare(m4aDownloadUrl, `${track.title || track.name} (M4A)`)} className="cursor-pointer hover:bg-zinc-800 text-white">
+                    <DropdownMenuItem onClick={() => handleShare(m4aShareUrl, `${track.title || track.name} (M4A)`)} className="cursor-pointer hover:bg-zinc-800 text-white">
                       <Download className="w-4 h-4" />
                       <span>M4A download (link, Apple)</span>
                     </DropdownMenuItem>
