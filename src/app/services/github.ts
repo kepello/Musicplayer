@@ -51,8 +51,9 @@ export interface CatalogTrack {
   trackNumber?: number;  // Sequential ordering
   path: string;
   readme?: string;  // Full markdown content
-  mp3?: string;     // Full URL to GitHub Releases
-  m4a?: string;     // Full URL to GitHub Releases
+  mp3?: string;     // MP3 playback URL
+  m4a?: string;     // Direct M4A download URL
+  download?: string; // Direct MP3 download URL
   playlist?: string; // Relative path to file
   lyrics?: string | null;  // Full text content (not path)
   streaming?: StreamingLinks;

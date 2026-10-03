@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router';
 import { getCatalog, getRawFileUrl, constructGitUrl, CatalogTrack, Catalog } from '@/app/services/github';
 import { usePlayer, Track } from '@/app/contexts/PlayerContext';
-import { ChevronLeft, Play, Download, Music, ChevronDown } from 'lucide-react';
+import { ChevronLeft, Play, Download, Music, ChevronDown, Share2 } from 'lucide-react';
 import Markdown from 'react-markdown';
 import { stripHtmlFromMarkdown } from '@/app/utils/markdown';
 import { StreamingLinks } from '@/app/components/StreamingLinks';
@@ -24,6 +24,7 @@ export function TrackView() {
   const [catalog, setCatalog] = useState<Catalog | null>(null);
   const [allTracks, setAllTracks] = useState<Track[]>([]);
   const [loading, setLoading] = useState(true);
+  const [shareFeedback, setShareFeedback] = useState<{ message: string; url?: string; error?: boolean } | null>(null);
   
   // Detect device type
   const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
@@ -35,6 +36,7 @@ export function TrackView() {
       if (!collectionName || !trackName) return;
       
       setLoading(true);
+      setShareFeedback(null);
       
       const catalogData = await getCatalog();
       if (!catalogData) {
@@ -129,11 +131,40 @@ export function TrackView() {
     }
   };
 
+  const handleShare = async (url: string, title: string) => {
+    setShareFeedback(null);
+
+    if (navigator.share) {
+      try {
+        await navigator.share({ title, url });
+        setShareFeedback({ message: 'Shared.' });
+        return;
+      } catch (error) {
+        if (error instanceof DOMException && error.name === 'AbortError') {
+          return;
+        }
+        console.error('Unable to share link:', error);
+        setShareFeedback({ message: 'Sharing failed. Trying to copy the link instead.' });
+      }
+    }
+
+    try {
+      await navigator.clipboard.writeText(url);
+      setShareFeedback({ message: 'Link copied to clipboard.' });
+    } catch (error) {
+      console.error('Unable to copy share link:', error);
+      setShareFeedback({ message: 'Could not copy the link. Select and copy it here:', url, error: true });
+    }
+  };
+
   const trackPath = track?.path || '';
+  const mp3DownloadUrl = track?.download || track?.mp3;
+  const m4aDownloadUrl = track?.m4a;
   const isCurrentTrack = currentTrack?.path === trackPath;
   
   const backLink = `/collection/${encodeURIComponent(collectionName!)}`;
   const backText = collectionName;
+  const trackPageUrl = window.location.href;
 
   if (loading) {
     return (
@@ -172,42 +203,91 @@ export function TrackView() {
             )}
           </div>
           
-          {(track?.mp3 || track?.m4a) && (
+          {track && (
             <div className="flex flex-wrap gap-3 mb-8">
-              <button
-                onClick={handlePlay}
-                className="p-3 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full transition-all"
-                title={isCurrentTrack && isPlaying ? 'Playing' : 'Play Track'}
-              >
-                <Play className="w-5 h-5 text-white" fill="currentColor" />
-              </button>
-              
+              {(track.mp3 || track.m4a) && (
+                <>
+                  <button
+                    onClick={handlePlay}
+                    className="p-3 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full transition-all"
+                    title={isCurrentTrack && isPlaying ? 'Playing' : 'Play Track'}
+                  >
+                    <Play className="w-5 h-5 text-white" fill="currentColor" />
+                  </button>
+
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button className="px-4 py-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-lg transition-all text-sm flex items-center gap-2">
+                        <Download className="w-4 h-4" />
+                        Download
+                        <ChevronDown className="w-4 h-4" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" className="bg-zinc-900 border-zinc-800 text-white">
+                      {track.mp3 && (
+                        <DropdownMenuItem onClick={() => handleDownload('mp3')} className="cursor-pointer hover:bg-zinc-800 text-white">
+                          <Download className="w-4 h-4" />
+                          <span>MP3 <span className="text-zinc-500">(universal)</span></span>
+                        </DropdownMenuItem>
+                      )}
+                      {track.m4a && (
+                        <DropdownMenuItem onClick={() => handleDownload('m4a')} className="cursor-pointer hover:bg-zinc-800 text-white">
+                          <Download className="w-4 h-4" />
+                          <span>M4A <span className="text-zinc-500">(Apple)</span></span>
+                        </DropdownMenuItem>
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                  <StreamingLinks links={track.streaming} />
+                </>
+              )}
+
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <button className="px-4 py-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-lg transition-all text-sm flex items-center gap-2">
-                    <Download className="w-4 h-4" />
-                    Download
+                  <button
+                    className="px-4 py-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-lg transition-all text-sm flex items-center gap-2"
+                    aria-label="Share track"
+                  >
+                    <Share2 className="w-4 h-4" />
+                    Share
                     <ChevronDown className="w-4 h-4" />
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start" className="bg-zinc-900 border-zinc-800 text-white">
-                  {track?.mp3 && (
-                    <DropdownMenuItem onClick={() => handleDownload('mp3')} className="cursor-pointer hover:bg-zinc-800 text-white">
+                  <DropdownMenuItem onClick={() => handleShare(trackPageUrl, track.title || track.name)} className="cursor-pointer hover:bg-zinc-800 text-white">
+                    <Share2 className="w-4 h-4" />
+                    <span>This page (link)</span>
+                  </DropdownMenuItem>
+                  {mp3DownloadUrl && (
+                    <DropdownMenuItem onClick={() => handleShare(mp3DownloadUrl, `${track.title || track.name} (MP3)`)} className="cursor-pointer hover:bg-zinc-800 text-white">
                       <Download className="w-4 h-4" />
-                      <span>MP3 <span className="text-zinc-500">(universal)</span></span>
+                      <span>MP3 download (link)</span>
                     </DropdownMenuItem>
                   )}
-                  {track?.m4a && (
-                    <DropdownMenuItem onClick={() => handleDownload('m4a')} className="cursor-pointer hover:bg-zinc-800 text-white">
+                  {m4aDownloadUrl && (
+                    <DropdownMenuItem onClick={() => handleShare(m4aDownloadUrl, `${track.title || track.name} (M4A)`)} className="cursor-pointer hover:bg-zinc-800 text-white">
                       <Download className="w-4 h-4" />
-                      <span>M4A <span className="text-zinc-500">(Apple)</span></span>
+                      <span>M4A download (link, Apple)</span>
                     </DropdownMenuItem>
                   )}
                 </DropdownMenuContent>
               </DropdownMenu>
-
-              <StreamingLinks links={track?.streaming} />
             </div>
+          )}
+          {shareFeedback && (
+            <p
+              className={`mb-8 text-sm ${shareFeedback.error ? 'text-red-400' : 'text-zinc-400'}`}
+              role={shareFeedback.error ? 'alert' : 'status'}
+              aria-live={shareFeedback.error ? 'assertive' : 'polite'}
+            >
+              {shareFeedback.message}
+              {shareFeedback.url && (
+                <>
+                  {' '}
+                  <span className="select-all break-all">{shareFeedback.url}</span>
+                </>
+              )}
+            </p>
           )}
         </div>
 
